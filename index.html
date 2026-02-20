@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenBoBS Console</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <h1>OpenBoBS</h1>
+        <p class="subtitle">A ClawDBot-style assistant with upgraded UX.</p>
+
+        <section>
+          <h2>Quick Actions</h2>
+          <div class="button-grid">
+            <button data-action="prompt">Generate a project brief</button>
+            <button data-action="refactor">Refactor this function</button>
+            <button data-action="bug">Find likely bugs</button>
+            <button data-action="tests">Write unit tests</button>
+          </div>
+        </section>
+
+        <section>
+          <h2>Workspace</h2>
+          <label>
+            Project name
+            <input id="projectName" value="OpenBoBS" />
+          </label>
+          <label>
+            Model profile
+            <select id="profile">
+              <option value="balanced">Balanced</option>
+              <option value="creative">Creative</option>
+              <option value="strict">Strict</option>
+            </select>
+          </label>
+        </section>
+
+        <section>
+          <h2>Utilities</h2>
+          <div class="button-grid">
+            <button id="exportBtn">Export Conversation</button>
+            <button id="clearBtn" class="danger">Clear Chat</button>
+            <button id="themeBtn">Toggle Theme</button>
+          </div>
+        </section>
+      </aside>
+
+      <main class="chat-panel">
+        <header>
+          <div>
+            <h2>ClawDBot Alternative</h2>
+            <p id="status">Ready • Local demo mode</p>
+          </div>
+          <span class="badge">Feature-rich UI</span>
+        </header>
+
+        <div id="messages" class="messages" aria-live="polite"></div>
+
+        <form id="composer" class="composer">
+          <textarea
+            id="input"
+            placeholder="Ask for code help, architecture ideas, tests, and more…"
+            rows="3"
+            required
+          ></textarea>
+          <div class="composer-actions">
+            <small>Tip: Use /summary, /plan, /ship</small>
+            <button type="submit">Send</button>
+          </div>
+        </form>
+      </main>
+    </div>
+
+    <template id="messageTpl">
+      <article class="message">
+        <div class="meta"></div>
+        <p class="content"></p>
+      </article>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
