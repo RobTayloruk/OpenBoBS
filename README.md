@@ -1,5 +1,4 @@
 # OpenBoBS
-# OpenBoBS
 
 OpenBoBS is a ClawDBot-inspired assistant interface with a cleaner UI and additional workflow features.
 
