@@ -3,22 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OpenBoBS Console</title>
+    <title>OpenBoBS • OpenClaw Style Agent Console</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="app-shell">
       <aside class="sidebar">
-        <h1>OpenBoBS</h1>
-        <p class="subtitle">A ClawDBot-style assistant with upgraded UX.</p>
+        <div>
+          <h1>OpenBoBS</h1>
+          <p class="subtitle">OpenClaw-style multi-agent workspace.</p>
+        </div>
 
-        <section>
-          <h2>Quick Actions</h2>
-          <div class="button-grid">
-            <button data-action="prompt">Generate a project brief</button>
-            <button data-action="refactor">Refactor this function</button>
-            <button data-action="bug">Find likely bugs</button>
-            <button data-action="tests">Write unit tests</button>
+        <section class="hero-card">
+          <img src="assets/agent-hub.svg" alt="Abstract illustration of agent network" />
+          <div>
+            <h3>Agent Mission Control</h3>
+            <p>Compose specialized agents and run orchestrated delivery flows from one console.</p>
           </div>
         </section>
 
@@ -29,18 +29,55 @@
             <input id="projectName" value="OpenBoBS" />
           </label>
           <label>
-            Model profile
+            Profile
             <select id="profile">
               <option value="balanced">Balanced</option>
               <option value="creative">Creative</option>
               <option value="strict">Strict</option>
             </select>
           </label>
+          <label>
+            Model
+            <select id="model">
+              <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+              <option value="gpt-4.1">gpt-4.1</option>
+              <option value="o4-mini">o4-mini</option>
+            </select>
+          </label>
+        </section>
+
+        <section>
+          <h2>Advanced Agents</h2>
+          <div id="agentList" class="agent-list"></div>
+          <div class="button-grid compact">
+            <button id="allAgentsBtn">Enable all</button>
+            <button id="clearAgentsBtn">Clear</button>
+          </div>
+        </section>
+
+        <section>
+          <h2>Templates</h2>
+          <div class="button-grid">
+            <button data-template="mvp">MVP Build Sprint</button>
+            <button data-template="incident">Incident Response</button>
+            <button data-template="scaling">Scale Readiness</button>
+          </div>
+        </section>
+
+        <section>
+          <h2>Quick Tasks</h2>
+          <div class="button-grid">
+            <button data-action="feature">Build a full feature spec</button>
+            <button data-action="refactor">Refactor architecture safely</button>
+            <button data-action="audit">Security and quality audit</button>
+            <button data-action="release">Generate release checklist</button>
+          </div>
         </section>
 
         <section>
           <h2>Utilities</h2>
           <div class="button-grid">
+            <button id="runWorkflowBtn">Run Agent Workflow</button>
             <button id="exportBtn">Export Conversation</button>
             <button id="clearBtn" class="danger">Clear Chat</button>
             <button id="themeBtn">Toggle Theme</button>
@@ -51,23 +88,56 @@
       <main class="chat-panel">
         <header>
           <div>
-            <h2>ClawDBot Alternative</h2>
-            <p id="status">Ready • Local demo mode</p>
+            <h2>OpenClaw-style Agent Orchestration</h2>
+            <p id="status">Ready • Local multi-agent simulation</p>
           </div>
-          <span class="badge">Feature-rich UI</span>
+          <span class="badge" id="activeAgentsBadge">0 agents active</span>
         </header>
+
+        <section class="dashboard-strip" aria-label="Workspace highlights">
+          <article>
+            <img src="assets/architecture.svg" alt="Architecture blueprint visual" />
+            <h3>Architecture</h3>
+            <p>Define clean boundaries and scalable contracts.</p>
+          </article>
+          <article>
+            <img src="assets/testing.svg" alt="Testing and quality visual" />
+            <h3>Quality Gate</h3>
+            <p>Prioritized checks for unit, integration, and e2e.</p>
+          </article>
+          <article>
+            <img src="assets/release.svg" alt="Release operations visual" />
+            <h3>Release Ops</h3>
+            <p>Staged rollout plans with rollback confidence.</p>
+          </article>
+        </section>
+
+        <section class="insights-panel" aria-label="Execution board">
+          <article>
+            <h3>Execution Timeline</h3>
+            <ol id="timelineList" class="timeline-list"></ol>
+          </article>
+          <article>
+            <h3>Active Focus</h3>
+            <ul id="focusList" class="focus-list"></ul>
+          </article>
+          <article>
+            <h3>Artifacts</h3>
+            <ul id="artifactList" class="focus-list"></ul>
+          </article>
+        </section>
 
         <div id="messages" class="messages" aria-live="polite"></div>
 
         <form id="composer" class="composer">
           <textarea
             id="input"
-            placeholder="Ask for code help, architecture ideas, tests, and more…"
-            rows="3"
+            placeholder="Describe your build request. Try /plan, /agents, /risk, /ship, /summary"
+            rows="4"
             required
           ></textarea>
           <div class="composer-actions">
-            <small>Tip: Use /summary, /plan, /ship</small>
+            <small>Slash commands: /plan /agents /risk /ship /summary</small>
             <button type="submit">Send</button>
           </div>
         </form>
