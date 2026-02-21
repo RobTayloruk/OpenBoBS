@@ -16,6 +16,7 @@ const botPromptInput = document.getElementById('botPrompt');
 const webSearchQueryInput = document.getElementById('webSearchQuery');
 const searchResults = document.getElementById('searchResults');
 const kaliResults = document.getElementById('kaliResults');
+const kaliCatalogSummary = document.getElementById('kaliCatalogSummary');
 const historyList = document.getElementById('historyList');
 const metricsList = document.getElementById('metricsList');
 
@@ -29,6 +30,7 @@ const terminalOutput = document.getElementById('terminalOutput');
 const SELF_STATE_KEY = 'openbobs-self-update-state';
 const HISTORY_KEY = 'openbobs-workflow-history';
 const memory = [];
+let currentToolContext = null;
 
 const workflowTemplates = {
   mvp: { label: 'MVP Sprint', summary: 'PRD, architecture, UI skeleton, test plan, release gates.', prompt: 'Build an enterprise MVP plan with deterministic architecture, UX milestones, tests, and release criteria.' },
@@ -101,11 +103,7 @@ function renderHistory() {
     li.innerHTML = `<button type="button" class="history-replay" data-history-index="${idx}">Replay</button> ${new Date(item.at).toLocaleString()} • ${item.task.slice(0, 70)}`;
     historyList.append(li);
   });
-  if (!workflowHistory.length) {
-    const li = document.createElement('li');
-    li.textContent = 'No runs yet.';
-    historyList.append(li);
-  }
+  if (!workflowHistory.length) historyList.innerHTML = '<li>No runs yet.</li>';
 }
 
 async function refreshMetrics() {
@@ -118,9 +116,7 @@ async function refreshMetrics() {
       li.textContent = `${k}: ${v}`;
       metricsList.append(li);
     });
-    const up = document.createElement('li');
-    up.textContent = `uptimeSeconds: ${payload.uptimeSeconds ?? 'n/a'}`;
-    metricsList.append(up);
+    metricsList.insertAdjacentHTML('beforeend', `<li>uptimeSeconds: ${payload.uptimeSeconds ?? 'n/a'}</li>`);
   } catch {
     metricsList.innerHTML = '<li>Metrics unavailable.</li>';
   }
@@ -229,7 +225,18 @@ function slashResponse(text) {
   return null;
 }
 
-async function askOllama(task, active, cycle, totalCycles) {
+async function loadAgentToolContext(activeAgents) {
+  const response = await fetch('/api/agent/tools-context', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ activeAgents: activeAgents.map((agent) => agent.name) }),
+  });
+  const payload = await response.json();
+  currentToolContext = payload;
+  return payload;
+}
+
+async function askOllama(task, active, cycle, totalCycles, toolContext) {
   const prompt = [
     `Project: ${projectNameInput.value}`,
     `Profile: ${profileInput.value}`,
@@ -237,6 +244,7 @@ async function askOllama(task, active, cycle, totalCycles) {
     `Cycle: ${cycle}/${totalCycles}`,
     `Agents: ${active.map((agent) => agent.name).join(', ')}`,
     `Self-memory: ${selfSummary()}`,
+    `Kali tool context (inventory + safe runnable): ${JSON.stringify(toolContext?.tooling || {})}`,
     'Return concise enterprise output per agent plus final orchestration summary and acceptance criteria.',
     `Task: ${task}`,
   ].join('\n');
@@ -252,8 +260,14 @@ async function askOllama(task, active, cycle, totalCycles) {
   return data.reply;
 }
 
-function localFallback(task, active, cycle, totalCycles) {
-  return [`Cycle ${cycle}/${totalCycles}`, ...active.map((agent) => `${agent.name}\n- ${agent.prompt}\n- Task: ${task}\n- Policy: ${profilePolicy()}`), 'Orchestrator\nDeterministic local fallback completed with release-oriented deliverables.'].join('\n\n');
+function localFallback(task, active, cycle, totalCycles, toolContext) {
+  return [
+    `Cycle ${cycle}/${totalCycles}`,
+    `Kali inventory installed: ${toolContext?.tooling?.installedCount ?? 0}`,
+    `Kali safe runnable: ${toolContext?.tooling?.safeRunnableTools?.join(', ') || 'none'}`,
+    ...active.map((agent) => `${agent.name}\n- ${agent.prompt}\n- Task: ${task}\n- Policy: ${profilePolicy()}`),
+    'Orchestrator\nDeterministic local fallback completed with release-oriented deliverables.',
+  ].join('\n\n');
 }
 
 async function checkHealth() {
@@ -289,14 +303,16 @@ async function runWebSearch() {
   await refreshMetrics();
 }
 
-async function scanKaliTools() {
-  terminalLog('Scanning Kali tool availability.');
+async function refreshKaliCatalog() {
   const response = await fetch('/api/kali/tools');
   const payload = await response.json();
   kaliResults.innerHTML = '';
-  payload.tools.forEach((tool) => {
+  const installed = payload.tools.filter((tool) => tool.installed);
+  const safe = installed.filter((tool) => tool.safeRunnable);
+  kaliCatalogSummary.textContent = `Catalog: ${payload.tools.length} listed • installed: ${installed.length} • safe runnable: ${safe.length}`;
+  payload.tools.slice(0, 14).forEach((tool) => {
     const li = document.createElement('li');
-    li.textContent = `${tool.name}: ${tool.installed ? 'installed' : 'not installed'} (${tool.check})`;
+    li.textContent = `${tool.name}: ${tool.installed ? 'installed' : 'not installed'} • ${tool.safeRunnable ? 'safe-run' : 'inventory-only'}`;
     kaliResults.append(li);
   });
   await refreshMetrics();
@@ -348,15 +364,18 @@ async function runWorkflow(text) {
   renderProgress(active);
   await progressRunner(active);
 
+  const toolContext = await loadAgentToolContext(active);
   const totalCycles = autonomyModeInput.checked ? Math.min(5, Math.max(1, Number(autonomyCyclesInput.value || 1))) : 1;
   let finalOutput = '';
 
   for (let cycle = 1; cycle <= totalCycles; cycle += 1) {
     try {
-      finalOutput = ollamaModeInput.checked ? await askOllama(text, active, cycle, totalCycles) : localFallback(text, active, cycle, totalCycles);
+      finalOutput = ollamaModeInput.checked
+        ? await askOllama(text, active, cycle, totalCycles, toolContext)
+        : localFallback(text, active, cycle, totalCycles, toolContext);
     } catch (error) {
       terminalLog(`Cycle ${cycle}/${totalCycles} Ollama error: ${error.message}`);
-      finalOutput = localFallback(text, active, cycle, totalCycles);
+      finalOutput = localFallback(text, active, cycle, totalCycles, toolContext);
     }
   }
 
@@ -383,7 +402,8 @@ document.getElementById('runWorkflowBtn').addEventListener('click', async () => 
 
 document.getElementById('healthBtn').addEventListener('click', checkHealth);
 document.getElementById('webSearchBtn').addEventListener('click', runWebSearch);
-document.getElementById('scanKaliBtn').addEventListener('click', scanKaliTools);
+document.getElementById('scanKaliBtn').addEventListener('click', refreshKaliCatalog);
+document.getElementById('refreshKaliCatalogBtn').addEventListener('click', refreshKaliCatalog);
 document.querySelectorAll('.kali-run-btn').forEach((btn) => btn.addEventListener('click', () => runKaliTool(btn.dataset.kaliTool)));
 document.getElementById('createBotBtn').addEventListener('click', createBotAgent);
 
@@ -431,6 +451,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
     autonomyMode: autonomyModeInput.checked,
     autonomyCycles: autonomyCyclesInput.value,
     guardrails: { allowKaliLaunches: allowKaliLaunchesInput.checked },
+    toolContext: currentToolContext,
     selfUpdateState,
     workflowHistory,
     activeAgents: selectedAgents().map((a) => a.id),
@@ -453,5 +474,5 @@ renderHistory();
 refreshMetrics();
 setInterval(refreshMetrics, 15000);
 terminalLog('Dashboard online. Deterministic runtime active.');
-appendMessage('assistant', 'OpenBoBS is ready. Use playbooks, bot creator, web search, Kali checks, history replay, and runtime metrics.');
-scanKaliTools();
+appendMessage('assistant', 'OpenBoBS is ready. Use playbooks, bot creator, web search, safe Kali catalog, history replay, and runtime metrics.');
+refreshKaliCatalog();

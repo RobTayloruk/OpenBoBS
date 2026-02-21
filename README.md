@@ -17,7 +17,7 @@ OpenBoBS is a deterministic, enterprise-grade OpenClaw-style orchestration conso
 - 1-click **pre-done playbooks** for common delivery paths.
 - Bot Creator section for adding custom agents on the fly.
 - Integrated web search section for external research context.
-- Kali tools section for safe pentest tool availability/version launch checks.
+- Kali tools catalog section with broad inventory visibility, safe-run wrappers for allowed checks, and explicit execution guardrails.
 - Workflow history with replay buttons for deterministic reruns.
 - Runtime metrics panel (chat/search/kali/health counters + uptime).
 - Guardrail toggle for Kali tool launch commands (safe-by-default).
@@ -58,3 +58,6 @@ Health wait behavior: OpenBoBS starts the app server immediately and performs Ol
 
 
 New command shortcuts: `/help`, `/metrics`.
+
+
+Agent tooling context: active agents automatically receive Kali catalog/safe-tool context from `/api/agent/tools-context` during workflow orchestration.

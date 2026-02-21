@@ -21,16 +21,32 @@ METRICS = {
     'chatRequests': 0,
     'searchRequests': 0,
     'kaliToolRuns': 0,
+    'kaliCatalogChecks': 0,
+    'agentToolContextRequests': 0,
     'healthChecks': 0,
     'runtimeChecks': 0,
 }
 
-KALI_TOOLS = {
+# Broad Kali catalog visibility (inventory only).
+KALI_CATALOG = [
+    'nmap', 'nikto', 'sqlmap', 'gobuster', 'wpscan', 'hydra', 'ffuf', 'amass', 'whatweb',
+    'dirb', 'dirbuster', 'john', 'hashcat', 'aircrack-ng', 'metasploit-framework', 'msfconsole',
+    'wireshark', 'tcpdump', 'bettercap', 'zaproxy', 'burpsuite', 'enum4linux', 'smbclient',
+    'netcat', 'snmpwalk', 'responder', 'crackmapexec', 'impacket-secretsdump', 'theharvester',
+    'dnsenum', 'masscan', 'recon-ng', 'sublist3r', 'seclists',
+]
+
+# Explicit safe execution allowlist (info/version checks only).
+KALI_SAFE_COMMANDS = {
     'nmap': ['nmap', '--version'],
     'nikto': ['nikto', '-Version'],
     'sqlmap': ['sqlmap', '--version'],
     'gobuster': ['gobuster', 'version'],
     'wpscan': ['wpscan', '--version'],
+    'ffuf': ['ffuf', '-V'],
+    'amass': ['amass', 'version'],
+    'whatweb': ['whatweb', '--version'],
+    'tcpdump': ['tcpdump', '--version'],
 }
 
 
@@ -69,26 +85,47 @@ def web_search(query):
     return {'ok': True, 'results': results}
 
 
-def kali_tools_status():
+def kali_catalog_status():
     return {
         'ok': True,
         'tools': [
-            {'name': name, 'installed': bool(shutil.which(name)), 'check': ' '.join(cmd)}
-            for name, cmd in KALI_TOOLS.items()
+            {
+                'name': name,
+                'installed': bool(shutil.which(name)),
+                'safeRunnable': name in KALI_SAFE_COMMANDS,
+                'safeCheck': ' '.join(KALI_SAFE_COMMANDS[name]) if name in KALI_SAFE_COMMANDS else 'inventory-only',
+            }
+            for name in KALI_CATALOG
         ],
     }
 
 
 def kali_launch(tool):
-    if tool not in KALI_TOOLS:
-        return {'ok': False, 'error': f'Unsupported tool: {tool}'}
+    if tool not in KALI_SAFE_COMMANDS:
+        return {'ok': False, 'error': f'{tool} is not enabled for execution. Inventory is available via catalog.'}
     if not shutil.which(tool):
         return {'ok': False, 'error': f'{tool} is not installed in this runtime'}
 
-    cmd = KALI_TOOLS[tool]
+    cmd = KALI_SAFE_COMMANDS[tool]
     completed = subprocess.run(cmd, capture_output=True, text=True, timeout=15, check=False)
     output = (completed.stdout or completed.stderr or '').strip()[:1200]
     return {'ok': completed.returncode == 0, 'tool': tool, 'command': ' '.join(cmd), 'output': output}
+
+
+def agent_tools_context(active_agents):
+    catalog = kali_catalog_status()['tools']
+    installed = [tool['name'] for tool in catalog if tool['installed']]
+    safe = [tool['name'] for tool in catalog if tool['installed'] and tool['safeRunnable']]
+    return {
+        'ok': True,
+        'activeAgents': active_agents,
+        'tooling': {
+            'installedCount': len(installed),
+            'safeRunnableCount': len(safe),
+            'safeRunnableTools': safe[:12],
+            'catalogSample': installed[:18],
+        },
+    }
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -122,7 +159,8 @@ class Handler(SimpleHTTPRequestHandler):
             return
 
         if self.path == '/api/kali/tools':
-            self._json(200, kali_tools_status())
+            METRICS['kaliCatalogChecks'] += 1
+            self._json(200, kali_catalog_status())
             return
 
         if self.path == '/':
@@ -165,6 +203,12 @@ class Handler(SimpleHTTPRequestHandler):
                 self._json(200, kali_launch(tool))
             except Exception as err:  # noqa: BLE001
                 self._json(200, {'ok': False, 'error': str(err)})
+            return
+
+        if self.path == '/api/agent/tools-context':
+            METRICS['agentToolContextRequests'] += 1
+            active_agents = payload.get('activeAgents', [])
+            self._json(200, agent_tools_context(active_agents))
             return
 
         self._json(404, {'ok': False, 'error': 'Not found'})

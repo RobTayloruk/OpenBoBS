@@ -72,11 +72,13 @@
           <h2>Kali Linux Tools</h2>
           <div class="button-grid compact">
             <button id="scanKaliBtn">Scan tools</button>
+            <button id="refreshKaliCatalogBtn">Refresh catalog</button>
             <button data-kali-tool="nmap" class="kali-run-btn">Run nmap check</button>
             <button data-kali-tool="nikto" class="kali-run-btn">Run nikto check</button>
             <button data-kali-tool="sqlmap" class="kali-run-btn">Run sqlmap check</button>
           </div>
           <p class="hint">Runs safe version/info checks in the active runtime.</p>
+          <div id="kaliCatalogSummary" class="hint"></div>
         </section>
 
         <section>
@@ -152,7 +154,7 @@
             <ul id="searchResults" class="results-list"></ul>
           </article>
           <article>
-            <h3>Kali Tool Status</h3>
+            <h3>Kali Tool Status (safe mode)</h3>
             <ul id="kaliResults" class="results-list"></ul>
           </article>
         </section>
