@@ -3,47 +3,85 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OpenBoBS Console</title>
+    <title>OpenBoBS • AI Agent Creator & Deployment Dashboard</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="app-shell">
       <aside class="sidebar">
-        <h1>OpenBoBS</h1>
-        <p class="subtitle">A ClawDBot-style assistant with upgraded UX.</p>
+        <div class="brand-block">
+          <h1>OpenBoBS</h1>
+          <p class="subtitle">AI agent creator & autonomous deployment dashboard.</p>
+        </div>
 
         <section>
-          <h2>Quick Actions</h2>
-          <div class="button-grid">
-            <button data-action="prompt">Generate a project brief</button>
-            <button data-action="refactor">Refactor this function</button>
-            <button data-action="bug">Find likely bugs</button>
-            <button data-action="tests">Write unit tests</button>
+          <h2>AI Connection Gateway</h2>
+          <p id="ollamaConnection" class="hint">Checking connection…</p>
+          <label class="switch-row"><input id="ollamaMode" type="checkbox" checked /><span>Use local offline Ollama</span></label>
+          <label>Provider <select id="providerSelect"></select></label>
+          <label>Model <select id="ollamaModel"></select></label>
+          <button id="healthBtn">Refresh connection</button>
+        </section>
+
+        <section>
+          <h2>Autonomous Deployment</h2>
+          <label class="switch-row"><input id="autonomyMode" type="checkbox" /><span>Autonomous loop</span></label>
+          <label>Cycles <input id="autonomyCycles" type="number" min="1" max="8" value="2" /></label>
+          <label>Auto-run every (sec) <input id="autoRunInterval" type="number" min="10" max="600" value="60" /></label>
+          <div class="button-grid compact">
+            <button id="startAutoBtn">Start auto-run</button>
+            <button id="stopAutoBtn">Stop auto-run</button>
+          </div>
+          <p id="autoRunStatus" class="hint">Auto-run idle.</p>
+        </section>
+
+        <section>
+          <h2>Web Intelligence</h2>
+          <label>Search query <input id="webSearchQuery" placeholder="Search web context" /></label>
+          <button id="webSearchBtn">Run search</button>
+        </section>
+
+        <section>
+          <h2>Agent Creator</h2>
+          <label>Agent name <input id="botName" value="Release Sentinel" /></label>
+          <label>Role <input id="botRole" value="Release risk triage + compliance checks" /></label>
+          <label>Prompt focus <input id="botPrompt" value="Summarize blockers and recommend deterministic next steps" /></label>
+          <button id="createBotBtn">Create agent</button>
+        </section>
+
+        <section>
+          <h2>Agent Import + Library</h2>
+          <label>Import URL <input id="agentImportUrl" value="https://agents.sabrina.dev" /></label>
+          <div class="button-grid compact">
+            <button id="importAgentBtn">Import</button>
+            <button id="refreshAgentLibraryBtn">Refresh</button>
+          </div>
+          <label>Library editor (JSON)</label>
+          <textarea id="agentEditor" rows="8" placeholder="Select/import an agent to edit JSON"></textarea>
+          <button id="saveEditedAgentBtn">Save edited agent</button>
+        </section>
+
+        <section>
+          <h2>Advanced Bot Packs</h2>
+          <div class="button-grid compact" id="botPackGrid"></div>
+        </section>
+
+        <section>
+          <h2>Agents</h2>
+          <div id="agentList" class="agent-list"></div>
+          <div class="button-grid compact">
+            <button id="allAgentsBtn">Enable all</button>
+            <button id="clearAgentsBtn">Clear</button>
           </div>
         </section>
 
         <section>
-          <h2>Workspace</h2>
-          <label>
-            Project name
-            <input id="projectName" value="OpenBoBS" />
-          </label>
-          <label>
-            Model profile
-            <select id="profile">
-              <option value="balanced">Balanced</option>
-              <option value="creative">Creative</option>
-              <option value="strict">Strict</option>
-            </select>
-          </label>
-        </section>
-
-        <section>
-          <h2>Utilities</h2>
+          <h2>Actions</h2>
           <div class="button-grid">
-            <button id="exportBtn">Export Conversation</button>
-            <button id="clearBtn" class="danger">Clear Chat</button>
-            <button id="themeBtn">Toggle Theme</button>
+            <button id="runWorkflowBtn">Run workflow</button>
+            <button id="exportBtn">Export session</button>
+            <button id="clearBtn" class="danger">Clear chat</button>
+            <button id="themeBtn">Toggle theme</button>
           </div>
         </section>
       </aside>
@@ -51,23 +89,67 @@
       <main class="chat-panel">
         <header>
           <div>
-            <h2>ClawDBot Alternative</h2>
-            <p id="status">Ready • Local demo mode</p>
+            <h2>AI Agent Deployment Board</h2>
+            <p id="status">Ready • waiting for objective</p>
           </div>
-          <span class="badge">Feature-rich UI</span>
+          <span class="badge" id="activeAgentsBadge">0 agents active</span>
         </header>
+
+        <section class="playbooks-panel">
+          <h3>Pre-done deployment playbooks</h3>
+          <div id="taskGrid" class="task-grid"></div>
+        </section>
+
+        <section class="dashboard-grid">
+          <article>
+            <h3>Agent Progress</h3>
+            <div id="progressList" class="progress-list"></div>
+          </article>
+          <article>
+            <h3>Execution Timeline</h3>
+            <ol id="timelineList" class="timeline-list"></ol>
+          </article>
+          <article>
+            <h3>Output Terminal</h3>
+            <pre id="terminalOutput" class="terminal"></pre>
+          </article>
+        </section>
+
+        <section class="results-grid">
+          <article>
+            <h3>Web Search Results</h3>
+            <ul id="searchResults" class="results-list"></ul>
+          </article>
+        </section>
+
+        <section class="results-grid">
+          <article>
+            <h3>Agent Library Files</h3>
+            <ul id="agentLibraryList" class="results-list"></ul>
+          </article>
+          <article>
+            <h3>Self-Learning Insights</h3>
+            <ul id="learningList" class="results-list"></ul>
+          </article>
+        </section>
+
+        <section class="results-grid">
+          <article>
+            <h3>Workflow History</h3>
+            <ul id="historyList" class="results-list"></ul>
+          </article>
+          <article>
+            <h3>Runtime Metrics</h3>
+            <ul id="metricsList" class="results-list"></ul>
+          </article>
+        </section>
 
         <div id="messages" class="messages" aria-live="polite"></div>
 
         <form id="composer" class="composer">
-          <textarea
-            id="input"
-            placeholder="Ask for code help, architecture ideas, tests, and more…"
-            rows="3"
-            required
-          ></textarea>
+          <textarea id="input" rows="4" required placeholder="Commands: /help /plan /agents /risk /ship /summary /selfupdate /playbooks /metrics /botpacks"></textarea>
           <div class="composer-actions">
-            <small>Tip: Use /summary, /plan, /ship</small>
+            <small>Inspired by modern agent IDE dashboards: creator, library, deployment, telemetry.</small>
             <button type="submit">Send</button>
           </div>
         </form>
@@ -75,10 +157,7 @@
     </div>
 
     <template id="messageTpl">
-      <article class="message">
-        <div class="meta"></div>
-        <p class="content"></p>
-      </article>
+      <article class="message"><div class="meta"></div><p class="content"></p></article>
     </template>
 
     <script src="app.js"></script>
