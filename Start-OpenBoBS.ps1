@@ -21,7 +21,10 @@ try {
 }
 
 $envFile = Join-Path $PSScriptRoot ".env"
-"OLLAMA_MODEL=$Model" | Set-Content -Path $envFile -Encoding UTF8
+@(
+  "OLLAMA_MODEL=$Model"
+  "OLLAMA_PULL_TIMEOUT=240"
+) | Set-Content -Path $envFile -Encoding UTF8
 
 Write-Host "[OpenBoBS] Using model: $Model"
 Write-Host "[OpenBoBS] Launching deterministic stack (openbobs + ollama)..."
@@ -31,28 +34,31 @@ if ($Rebuild) {
   $composeArgs += "--build"
 }
 
-docker @composeArgs
+docker @composeArgs | Out-Null
 
 Write-Host "[OpenBoBS] Waiting for application health..."
-$deadline = (Get-Date).AddMinutes(6)
+$deadline = (Get-Date).AddMinutes(4)
 $ready = $false
 while ((Get-Date) -lt $deadline) {
   try {
-    $response = Invoke-RestMethod -Uri "http://localhost:4173/api/runtime" -Method Get -TimeoutSec 5
+    $response = Invoke-RestMethod -Uri "http://localhost:4173/api/runtime" -Method Get -TimeoutSec 4
     if ($response.ok) {
       $ready = $true
       break
     }
   } catch {
-    Start-Sleep -Seconds 3
+    Start-Sleep -Seconds 2
   }
 }
 
 if (-not $ready) {
-  throw "OpenBoBS did not become ready within timeout. Run: docker compose logs --tail=200"
+  Write-Host "[OpenBoBS] Application did not report healthy runtime in time. Capturing diagnostics..."
+  docker compose ps
+  docker compose logs --tail=120 openbobs ollama
+  throw "OpenBoBS health wait timed out. Review logs above."
 }
 
-Write-Host "[OpenBoBS] Running. Opening dashboard..."
+Write-Host "[OpenBoBS] Runtime healthy. Opening dashboard..."
 Start-Process "http://localhost:4173"
 
 Write-Host "[OpenBoBS] Done."

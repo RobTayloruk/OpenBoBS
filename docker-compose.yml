@@ -26,6 +26,12 @@ services:
       OLLAMA_PULL_TIMEOUT: ${OLLAMA_PULL_TIMEOUT:-240}
     ports:
       - "4173:4173"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:4173/api/runtime"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
 
 volumes:
   ollama_data:

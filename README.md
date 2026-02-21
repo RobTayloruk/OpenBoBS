@@ -27,10 +27,11 @@ OpenBoBS is a deterministic, enterprise-grade OpenClaw-style orchestration conso
 
 This script:
 1. verifies Docker Desktop,
-2. writes `.env` model settings,
+2. writes `.env` model and startup timeout settings,
 3. starts compose services,
-4. waits for health,
-5. opens dashboard at `http://localhost:4173`.
+4. waits for `/api/runtime` health from the unified backend,
+5. prints diagnostics (`docker compose ps` + logs) if health timeout occurs,
+6. opens dashboard at `http://localhost:4173`.
 
 ## Deterministic validation
 
@@ -45,3 +46,6 @@ This script:
 - Logs: `docker compose logs -f --tail=200`
 - Stop: `docker compose down`
 - Full reset: `docker compose down -v`
+
+
+Health wait behavior: OpenBoBS starts the app server immediately and performs Ollama model pull in background, so first-run health checks no longer block on long model downloads.
