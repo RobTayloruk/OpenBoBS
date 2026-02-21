@@ -21,7 +21,9 @@ METRICS = {
     'chatRequests': 0,
     'searchRequests': 0,
     'agentImports': 0,
+    'agentSaves': 0,
     'agentLibraryReads': 0,
+    'ollamaStatusChecks': 0,
     'healthChecks': 0,
     'runtimeChecks': 0,
 }
@@ -30,10 +32,7 @@ METRICS = {
 def ollama_chat(messages, model):
     payload = json.dumps({'model': model, 'stream': False, 'messages': messages}).encode('utf-8')
     req = urllib.request.Request(
-        f'{OLLAMA_URL}/api/chat',
-        data=payload,
-        headers={'Content-Type': 'application/json'},
-        method='POST',
+        f'{OLLAMA_URL}/api/chat', data=payload, headers={'Content-Type': 'application/json'}, method='POST'
     )
     with urllib.request.urlopen(req, timeout=90) as response:
         body = json.loads(response.read().decode('utf-8'))
@@ -53,13 +52,16 @@ def web_search(query):
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     with urllib.request.urlopen(req, timeout=10) as response:
         html = response.read().decode('utf-8', errors='ignore')
-
     matches = re.findall(r'<a[^>]*class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)</a>', html)
-    results = []
-    for link, title in matches[:6]:
-        clean_title = re.sub(r'<[^>]+>', '', title).strip()
-        results.append({'title': clean_title, 'url': link})
-    return {'ok': True, 'results': results}
+    return {
+        'ok': True,
+        'results': [{'title': re.sub(r'<[^>]+>', '', title).strip(), 'url': link} for link, title in matches[:6]],
+    }
+
+
+def sanitize_filename(name):
+    clean = re.sub(r'[^a-zA-Z0-9._-]+', '-', name).strip('-')
+    return clean or f'agent-{int(time.time())}'
 
 
 def list_agent_library():
@@ -73,36 +75,32 @@ def list_agent_library():
             {
                 'file': file.name,
                 'name': data.get('name') or file.stem,
-                'source': data.get('_source', 'imported'),
+                'source': data.get('_source', 'local'),
                 'size': file.stat().st_size,
                 'downloadUrl': f'/agent_library/{file.name}',
+                'content': data,
             }
         )
     return {'ok': True, 'items': items}
 
 
-def sanitize_filename(name):
-    clean = re.sub(r'[^a-zA-Z0-9._-]+', '-', name).strip('-')
-    return clean or f'agent-{int(time.time())}'
+def save_agent(payload, source='local-edit'):
+    if not isinstance(payload, dict):
+        raise ValueError('Agent payload must be a JSON object')
+    name = payload.get('name') or payload.get('id') or payload.get('title') or f'agent-{int(time.time())}'
+    file_name = sanitize_filename(name) + '.json'
+    payload['_source'] = source
+    payload['_updatedAt'] = int(time.time())
+    destination = AGENT_LIBRARY_DIR / file_name
+    destination.write_text(json.dumps(payload, indent=2), encoding='utf-8')
+    return {'ok': True, 'file': file_name, 'name': name, 'downloadUrl': f'/agent_library/{file_name}'}
 
 
 def import_agent_from_url(url):
     req = urllib.request.Request(url, headers={'User-Agent': 'OpenBoBS/1.0'})
     with urllib.request.urlopen(req, timeout=20) as response:
-        content = response.read().decode('utf-8', errors='ignore')
-
-    parsed = json.loads(content)
-    if not isinstance(parsed, dict):
-        raise ValueError('Agent payload must be a JSON object')
-
-    name = parsed.get('name') or parsed.get('id') or parsed.get('title') or f'agent-{int(time.time())}'
-    filename = sanitize_filename(name) + '.json'
-    parsed['_source'] = url
-    parsed['_importedAt'] = int(time.time())
-
-    destination = AGENT_LIBRARY_DIR / filename
-    destination.write_text(json.dumps(parsed, indent=2), encoding='utf-8')
-    return {'ok': True, 'file': filename, 'name': name, 'downloadUrl': f'/agent_library/{filename}'}
+        parsed = json.loads(response.read().decode('utf-8', errors='ignore'))
+    return save_agent(parsed, source=url)
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -125,21 +123,24 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as err:  # noqa: BLE001
                 self._json(200, {'ok': False, 'models': [], 'error': str(err)})
             return
-
+        if self.path == '/api/ollama/status':
+            METRICS['ollamaStatusChecks'] += 1
+            try:
+                self._json(200, ollama_health())
+            except Exception as err:  # noqa: BLE001
+                self._json(200, {'ok': False, 'models': [], 'error': str(err)})
+            return
         if self.path == '/api/runtime':
             METRICS['runtimeChecks'] += 1
             self._json(200, {'ok': True, 'host': HOST, 'port': PORT, 'ollamaUrl': OLLAMA_URL})
             return
-
         if self.path == '/api/runtime/metrics':
             self._json(200, {'ok': True, 'metrics': METRICS, 'uptimeSeconds': int(time.time() - STARTED_AT)})
             return
-
         if self.path == '/api/agents/library':
             METRICS['agentLibraryReads'] += 1
             self._json(200, list_agent_library())
             return
-
         if self.path == '/':
             self.path = '/index.html'
         return super().do_GET()
@@ -151,16 +152,13 @@ class Handler(SimpleHTTPRequestHandler):
         if self.path == '/api/chat':
             METRICS['chatRequests'] += 1
             try:
-                messages = payload.get('messages', [])
-                model = payload.get('model', 'llama3.1:8b')
-                reply = ollama_chat(messages, model)
+                reply = ollama_chat(payload.get('messages', []), payload.get('model', 'llama3.1:8b'))
                 self._json(200, {'ok': True, 'reply': reply})
             except urllib.error.URLError as err:
                 self._json(200, {'ok': False, 'error': f'Ollama unavailable: {err}'})
             except Exception as err:  # noqa: BLE001
                 self._json(500, {'ok': False, 'error': str(err)})
             return
-
         if self.path == '/api/search':
             METRICS['searchRequests'] += 1
             query = payload.get('query', '').strip()
@@ -172,7 +170,6 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as err:  # noqa: BLE001
                 self._json(200, {'ok': False, 'error': str(err), 'results': []})
             return
-
         if self.path == '/api/agents/import':
             METRICS['agentImports'] += 1
             url = payload.get('url', '').strip()
@@ -181,6 +178,14 @@ class Handler(SimpleHTTPRequestHandler):
                 return
             try:
                 self._json(200, import_agent_from_url(url))
+            except Exception as err:  # noqa: BLE001
+                self._json(200, {'ok': False, 'error': str(err)})
+            return
+        if self.path == '/api/agents/save':
+            METRICS['agentSaves'] += 1
+            agent = payload.get('agent')
+            try:
+                self._json(200, save_agent(agent))
             except Exception as err:  # noqa: BLE001
                 self._json(200, {'ok': False, 'error': str(err)})
             return

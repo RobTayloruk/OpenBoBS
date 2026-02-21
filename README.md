@@ -1,44 +1,42 @@
 # OpenBoBS
 
-OpenBoBS is a deterministic, enterprise-grade OpenClaw-style orchestration console for local-first AI operations.
+OpenBoBS is an enterprise AI agent creator and deployment dashboard with local offline Ollama support, autonomous execution loops, and a persistent agent library.
 
-## What changed in this build
+## Core platform capabilities
 
-- Removed Kali-specific references from the product flow for now.
-- Added **Agent Import Hub** for importing agent definitions from external URLs (for example `https://agents.sabrina.dev/...`).
-- Added **Agent Library** panel with local download links for imported agents.
-- Added local save folder: `agent_library/` (served by backend and persisted in project workspace).
-- Kept advanced bot packs, pre-done playbooks, history replay, and runtime metrics.
+- **Local Ollama connection visibility** with live connection status and model selection.
+- **AI Agent Creator** for custom role/prompt creation.
+- **Agent Import Hub** for importing JSON agent definitions from sources like `https://agents.sabrina.dev/...`.
+- **Agent Library** saved locally under `agent_library/`, with download links and in-dashboard JSON editing/saving.
+- **Autonomous deployment loop** with configurable intervals and cycle counts.
+- **Self-learning behavior** that tracks recurring topics and updates adaptive policy over time.
+- **Pre-done bot packs** and one-click deployment playbooks.
+- **Runtime metrics, workflow history replay, and exportable sessions**.
 
-## Agent library APIs
+## APIs
 
-- `POST /api/agents/import` with `{ "url": "https://agents.sabrina.dev/..." }`
+- `GET /api/ollama/status`
+- `POST /api/chat`
+- `POST /api/agents/import`
 - `GET /api/agents/library`
-- Download imported files directly from `/agent_library/<file>.json`
+- `POST /api/agents/save`
+- `GET /api/runtime/metrics`
 
-## Quick start (Windows)
+## Quick start
+
+```bash
+./run.sh
+```
+
+Then open `http://localhost:4173`.
+
+## Docker start (Windows)
 
 ```powershell
 ./Start-OpenBoBS.ps1 -Model llama3.1:8b -Rebuild
 ```
 
-This script:
-1. verifies Docker Desktop,
-2. writes `.env` model settings,
-3. starts compose services,
-4. waits for `/api/runtime` health,
-5. creates desktop shortcut (`OpenBoBS.url`),
-6. opens dashboard at `http://localhost:4173`.
+## Notes
 
-## Deterministic validation
-
-```bash
-./update-openbobs.sh
-```
-
-## Operations
-
-- Dashboard: `http://localhost:4173`
-- Agent library folder: `./agent_library`
-- Logs: `docker compose logs -f --tail=200`
-- Stop: `docker compose down`
+- Imported agents are saved into `./agent_library`.
+- Ollama connection failures automatically fall back to local deterministic simulation output.
