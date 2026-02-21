@@ -19,6 +19,7 @@ const kaliResults = document.getElementById('kaliResults');
 const kaliCatalogSummary = document.getElementById('kaliCatalogSummary');
 const historyList = document.getElementById('historyList');
 const metricsList = document.getElementById('metricsList');
+const botPackGrid = document.getElementById('botPackGrid');
 
 const agentList = document.getElementById('agentList');
 const taskGrid = document.getElementById('taskGrid');
@@ -39,6 +40,14 @@ const workflowTemplates = {
   security: { label: 'Security Hardening', summary: 'Threat model, auth controls, secrets and audit improvements.', prompt: 'Produce security hardening backlog with threat model, auth checks, secrets handling, and audits.' },
 };
 
+const botPacks = [
+  { name: 'Red Team Commander', role: 'Adversarial simulation planner', prompt: 'Generate phased recon-to-report testing strategy with strict safety boundaries and evidence checkpoints.' },
+  { name: 'Blue Team Defender', role: 'Detection and hardening lead', prompt: 'Create SIEM detections, containment playbooks, and preventative controls for discovered risks.' },
+  { name: 'Compliance Auditor', role: 'Policy and controls verification', prompt: 'Map findings to ISO/SOC2 style controls and provide remediation ownership matrix.' },
+  { name: 'SRE Reliability Chief', role: 'Availability and incident resilience', prompt: 'Define SLOs, runbooks, failure modes, and staged rollback policies.' },
+  { name: 'Data Privacy Officer', role: 'Data governance and privacy', prompt: 'Assess PII handling, retention, and lawful processing controls with action items.' },
+];
+
 const agentCatalog = [
   { id: 'architect', name: 'System Architect', defaultOn: true, prompt: 'Define deterministic architecture and contracts.' },
   { id: 'frontend', name: 'Frontend Specialist', defaultOn: true, prompt: 'Deliver polished, accessible, professional UI.' },
@@ -48,31 +57,19 @@ const agentCatalog = [
   { id: 'selfupdate', name: 'Self-Updating Agent', defaultOn: true, prompt: 'Track memory and iterate response quality over time.' },
 ];
 
-function loadSelfState() {
+const loadJson = (key, fallback) => {
   try {
-    const saved = localStorage.getItem(SELF_STATE_KEY);
+    const saved = localStorage.getItem(key);
     if (saved) return JSON.parse(saved);
   } catch (_) {}
-  return { version: 1, runs: 0, learnedTopics: {} };
-}
+  return fallback;
+};
 
-function loadHistory() {
-  try {
-    const saved = localStorage.getItem(HISTORY_KEY);
-    if (saved) return JSON.parse(saved);
-  } catch (_) {}
-  return [];
-}
-
-const selfUpdateState = loadSelfState();
-const workflowHistory = loadHistory();
+const selfUpdateState = loadJson(SELF_STATE_KEY, { version: 1, runs: 0, learnedTopics: {} });
+const workflowHistory = loadJson(HISTORY_KEY, []);
 const saveSelfState = () => localStorage.setItem(SELF_STATE_KEY, JSON.stringify(selfUpdateState));
 const saveHistory = () => localStorage.setItem(HISTORY_KEY, JSON.stringify(workflowHistory.slice(0, 20)));
 const selectedAgents = () => agentCatalog.filter((agent) => document.getElementById(`agent-${agent.id}`)?.checked);
-
-function profilePolicy() {
-  return { balanced: 'Practical quality gates.', creative: 'Ambitious UX within guardrails.', strict: 'Deterministic controls and explicit acceptance criteria.' }[profileInput.value];
-}
 
 function appendMessage(role, content, author = role === 'user' ? 'You' : 'OpenBoBS') {
   const node = template.content.firstElementChild.cloneNode(true);
@@ -97,13 +94,14 @@ function addHistoryEntry(task, mode = 'manual') {
 }
 
 function renderHistory() {
-  historyList.innerHTML = '';
+  historyList.innerHTML = workflowHistory.length
+    ? ''
+    : '<li>No runs yet.</li>';
   workflowHistory.slice(0, 8).forEach((item, idx) => {
     const li = document.createElement('li');
     li.innerHTML = `<button type="button" class="history-replay" data-history-index="${idx}">Replay</button> ${new Date(item.at).toLocaleString()} • ${item.task.slice(0, 70)}`;
     historyList.append(li);
   });
-  if (!workflowHistory.length) historyList.innerHTML = '<li>No runs yet.</li>';
 }
 
 async function refreshMetrics() {
@@ -149,6 +147,23 @@ function renderTaskGrid() {
       await runWorkflow(item.prompt);
     });
     taskGrid.append(card);
+  });
+}
+
+function renderBotPacks() {
+  botPackGrid.innerHTML = '';
+  botPacks.forEach((pack, idx) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = `Load ${idx + 1}`;
+    btn.title = `${pack.name}: ${pack.role}`;
+    btn.addEventListener('click', () => {
+      botNameInput.value = pack.name;
+      botRoleInput.value = pack.role;
+      botPromptInput.value = pack.prompt;
+      createBotAgent();
+    });
+    botPackGrid.append(btn);
   });
 }
 
@@ -213,6 +228,7 @@ function progressRunner(active) {
 
 function slashResponse(text) {
   const cmd = text.trim().toLowerCase();
+  if (cmd === '/help') return 'Commands\n/help /plan /agents /risk /ship /summary /selfupdate /playbooks /metrics /botpacks';
   if (cmd === '/plan') return 'Plan\n1) Scope\n2) Architecture\n3) Build\n4) QA\n5) Release';
   if (cmd === '/agents') return ['Agents', ...agentCatalog.map((a) => `- ${a.name}`)].join('\n');
   if (cmd === '/risk') return 'Risk matrix\n- Scope creep\n- Integration drift\n- Coverage gaps\n- Rollout regressions';
@@ -220,10 +236,12 @@ function slashResponse(text) {
   if (cmd === '/summary') return `Summary\nProject: ${projectNameInput.value}\nProfile: ${profileInput.value}\n${selfSummary()}`;
   if (cmd === '/selfupdate') return `Self updater\n${selfSummary()}`;
   if (cmd === '/playbooks') return ['Playbooks', ...Object.values(workflowTemplates).map((p) => `- ${p.label}: ${p.summary}`)].join('\n');
+  if (cmd === '/botpacks') return ['Bot packs', ...botPacks.map((p) => `- ${p.name}: ${p.role}`)].join('\n');
   if (cmd === '/metrics') return Array.from(metricsList.querySelectorAll('li')).map((li) => li.textContent).join('\n') || 'No metrics yet.';
-  if (cmd === '/help') return 'Commands\n/plan /agents /risk /ship /summary /selfupdate /playbooks /metrics /help';
   return null;
 }
+
+const profilePolicy = () => ({ balanced: 'Practical quality gates.', creative: 'Ambitious UX within guardrails.', strict: 'Deterministic controls and explicit acceptance criteria.' }[profileInput.value]);
 
 async function loadAgentToolContext(activeAgents) {
   const response = await fetch('/api/agent/tools-context', {
@@ -231,9 +249,8 @@ async function loadAgentToolContext(activeAgents) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ activeAgents: activeAgents.map((agent) => agent.name) }),
   });
-  const payload = await response.json();
-  currentToolContext = payload;
-  return payload;
+  currentToolContext = await response.json();
+  return currentToolContext;
 }
 
 async function askOllama(task, active, cycle, totalCycles, toolContext) {
@@ -244,15 +261,20 @@ async function askOllama(task, active, cycle, totalCycles, toolContext) {
     `Cycle: ${cycle}/${totalCycles}`,
     `Agents: ${active.map((agent) => agent.name).join(', ')}`,
     `Self-memory: ${selfSummary()}`,
-    `Kali tool context (inventory + safe runnable): ${JSON.stringify(toolContext?.tooling || {})}`,
-    'Return concise enterprise output per agent plus final orchestration summary and acceptance criteria.',
+    `Kali tool context: ${JSON.stringify(toolContext?.tooling || {})}`,
     `Task: ${task}`,
   ].join('\n');
 
   const response = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: ollamaModelInput.value, messages: [{ role: 'system', content: 'You are OpenBoBS deterministic orchestrator. Produce clean structured output.' }, { role: 'user', content: prompt }] }),
+    body: JSON.stringify({
+      model: ollamaModelInput.value,
+      messages: [
+        { role: 'system', content: 'You are OpenBoBS deterministic orchestrator. Produce clean structured output with enterprise controls.' },
+        { role: 'user', content: prompt },
+      ],
+    }),
   });
 
   const data = await response.json();
@@ -268,20 +290,6 @@ function localFallback(task, active, cycle, totalCycles, toolContext) {
     ...active.map((agent) => `${agent.name}\n- ${agent.prompt}\n- Task: ${task}\n- Policy: ${profilePolicy()}`),
     'Orchestrator\nDeterministic local fallback completed with release-oriented deliverables.',
   ].join('\n\n');
-}
-
-async function checkHealth() {
-  status.textContent = 'Checking runtime health...';
-  terminalLog('Runtime health check started.');
-  try {
-    const response = await fetch('/api/health');
-    const payload = await response.json();
-    appendMessage('assistant', payload.ok ? `Ollama healthy. Models: ${payload.models.join(', ') || 'none found'}` : `Ollama unavailable: ${payload.error}`, 'Runtime');
-    status.textContent = payload.ok ? 'Runtime healthy' : 'Runtime fallback mode';
-  } catch (error) {
-    appendMessage('assistant', `Health check failed: ${error.message}`, 'Runtime');
-  }
-  await refreshMetrics();
 }
 
 async function runWebSearch() {
@@ -306,11 +314,11 @@ async function runWebSearch() {
 async function refreshKaliCatalog() {
   const response = await fetch('/api/kali/tools');
   const payload = await response.json();
-  kaliResults.innerHTML = '';
   const installed = payload.tools.filter((tool) => tool.installed);
   const safe = installed.filter((tool) => tool.safeRunnable);
   kaliCatalogSummary.textContent = `Catalog: ${payload.tools.length} listed • installed: ${installed.length} • safe runnable: ${safe.length}`;
-  payload.tools.slice(0, 14).forEach((tool) => {
+  kaliResults.innerHTML = '';
+  payload.tools.slice(0, 16).forEach((tool) => {
     const li = document.createElement('li');
     li.textContent = `${tool.name}: ${tool.installed ? 'installed' : 'not installed'} • ${tool.safeRunnable ? 'safe-run' : 'inventory-only'}`;
     kaliResults.append(li);
@@ -331,15 +339,14 @@ async function runKaliTool(tool) {
 }
 
 function createBotAgent() {
-  const id = `custom-${Date.now()}`;
   const name = botNameInput.value.trim();
   const role = botRoleInput.value.trim();
   const prompt = botPromptInput.value.trim();
   if (!name || !role || !prompt) return;
+  const id = `custom-${Date.now()}`;
   agentCatalog.push({ id, name, defaultOn: true, prompt: `${role}. ${prompt}` });
   renderAgents();
   document.getElementById(`agent-${id}`).checked = true;
-  updateActiveAgentBadge();
   appendMessage('assistant', `New bot agent created: ${name}\nRole: ${role}\nPrompt: ${prompt}`, 'Bot Creator');
 }
 
@@ -467,12 +474,27 @@ document.getElementById('exportBtn').addEventListener('click', () => {
   URL.revokeObjectURL(url);
 });
 
+async function checkHealth() {
+  status.textContent = 'Checking runtime health...';
+  terminalLog('Runtime health check started.');
+  try {
+    const response = await fetch('/api/health');
+    const payload = await response.json();
+    appendMessage('assistant', payload.ok ? `Ollama healthy. Models: ${payload.models.join(', ') || 'none found'}` : `Ollama unavailable: ${payload.error}`, 'Runtime');
+    status.textContent = payload.ok ? 'Runtime healthy' : 'Runtime fallback mode';
+  } catch (error) {
+    appendMessage('assistant', `Health check failed: ${error.message}`, 'Runtime');
+  }
+  await refreshMetrics();
+}
+
 renderTaskGrid();
+renderBotPacks();
 renderAgents();
-refreshTimeline();
 renderHistory();
+refreshTimeline();
 refreshMetrics();
 setInterval(refreshMetrics, 15000);
-terminalLog('Dashboard online. Deterministic runtime active.');
-appendMessage('assistant', 'OpenBoBS is ready. Use playbooks, bot creator, web search, safe Kali catalog, history replay, and runtime metrics.');
+terminalLog('Dashboard online. Enterprise mode active.');
+appendMessage('assistant', 'OpenBoBS ultimate dashboard ready. Use bot packs, playbooks, web intelligence, and controlled Kali operations.');
 refreshKaliCatalog();

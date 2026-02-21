@@ -3,7 +3,24 @@ FROM python:3.11-slim
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl ca-certificates \
+    && apt-get install -y --no-install-recommends \
+      curl \
+      ca-certificates \
+      nmap \
+      nikto \
+      sqlmap \
+      gobuster \
+      hydra \
+      ffuf \
+      amass \
+      whatweb \
+      tcpdump \
+      dnsutils \
+      smbclient \
+      snmp \
+      masscan \
+      netcat-openbsd \
+      seclists \
     && rm -rf /var/lib/apt/lists/*
 
 COPY . /app

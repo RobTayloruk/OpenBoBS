@@ -10,12 +10,13 @@ OpenBoBS is a deterministic, enterprise-grade OpenClaw-style orchestration conso
 - **Deterministic run flow** with explicit startup sequencing (`docker-start.sh`).
 - **Windows one-command launcher** (`Start-OpenBoBS.ps1`).
 
-## Feature set
+## Feature set (enterprise command center)
 
 - Professional operations dashboard with OpenClaw-inspired information architecture.
 - Multi-agent execution with real-time progress and terminal output.
 - 1-click **pre-done playbooks** for common delivery paths.
 - Bot Creator section for adding custom agents on the fly.
+- Advanced bot packs (Red Team, Blue Team, Compliance, SRE, Privacy) with one-click deployment.
 - Integrated web search section for external research context.
 - Kali tools catalog section with broad inventory visibility, safe-run wrappers for allowed checks, and explicit execution guardrails.
 - Workflow history with replay buttons for deterministic reruns.
@@ -61,3 +62,6 @@ New command shortcuts: `/help`, `/metrics`.
 
 
 Agent tooling context: active agents automatically receive Kali catalog/safe-tool context from `/api/agent/tools-context` during workflow orchestration.
+
+
+Kali runtime note: the Docker image now installs the dashboard-required Kali/security tooling bundle (`nmap`, `nikto`, `sqlmap`, `gobuster`, `hydra`, `ffuf`, `amass`, `whatweb`, `tcpdump`, `dnsutils`, `smbclient`, `snmp`, `masscan`, `netcat-openbsd`, `seclists`).
