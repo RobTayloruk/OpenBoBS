@@ -1,55 +1,47 @@
 # OpenBoBS
 
-OpenBoBS is a deterministic, enterprise-structured OpenClaw-style multi-agent system designed to run first time on Windows with Docker Desktop and offline Ollama.
+OpenBoBS is a deterministic, enterprise-grade OpenClaw-style orchestration console designed for first-run reliability on Windows + Docker Desktop.
 
-## Architecture (single backend, no mixed dev servers)
+## Why this repo is production-leaning
 
-- One backend (`run.py`) serves both UI assets and API routes.
-- No Vite, no split frontend dev server, no CORS juggling.
-- Docker Compose runs exactly two services:
-  - `openbobs` (UI + orchestration backend)
-  - `ollama` (offline local model runtime)
+- **Single backend runtime** (`run.py`) serves UI + APIs together.
+- **No mixed dev servers** and no CORS split between front/back.
+- **Docker-first stack** (`openbobs` + `ollama`) for offline operation.
+- **Deterministic run flow** with explicit startup sequencing (`docker-start.sh`).
+- **Windows one-command launcher** (`Start-OpenBoBS.ps1`).
 
-## Core capabilities
+## Feature set
 
-- Professional operations dashboard UI.
-- Multi-agent orchestration with deterministic progress visualization.
-- Prebuilt task packs (MVP, incident response, scale readiness, security hardening).
-- Self-updating memory persisted in browser storage.
-- Autonomy mode with configurable multi-cycle execution.
-- Offline Ollama integration with graceful fallback mode.
-- Terminal-style live runtime output.
+- Professional operations dashboard with OpenClaw-inspired information architecture.
+- Multi-agent execution with real-time progress and terminal output.
+- 1-click **pre-done playbooks** for common delivery paths.
+- Autonomy mode for multi-cycle iterative improvement.
+- Self-updating local memory (versioned patterns in browser storage).
+- Offline Ollama integration with graceful fallback to local deterministic outputs.
 
-## Windows one-script startup
-
-Use PowerShell:
+## Quick start (Windows)
 
 ```powershell
 ./Start-OpenBoBS.ps1 -Model llama3.1:8b -Rebuild
 ```
 
-What it does:
+This script:
+1. verifies Docker Desktop,
+2. writes `.env` model settings,
+3. starts compose services,
+4. waits for health,
+5. opens dashboard at `http://localhost:4173`.
 
-1. Verifies Docker Desktop engine availability.
-2. Writes `.env` with your Ollama model.
-3. Starts the full stack with Docker Compose.
-4. Waits for app readiness.
-5. Opens the dashboard at `http://localhost:4173`.
-
-## Local non-docker run (optional)
-
-```bash
-./run.sh
-```
-
-## Deterministic validation command
+## Deterministic validation
 
 ```bash
 ./update-openbobs.sh
 ```
 
-## Useful operations
+## Operations
 
-- View logs: `docker compose logs -f --tail=200`
-- Stop stack: `docker compose down`
-- Reset Ollama model cache: `docker compose down -v`
+- Dashboard: `http://localhost:4173`
+- Ollama API: `http://localhost:11434`
+- Logs: `docker compose logs -f --tail=200`
+- Stop: `docker compose down`
+- Full reset: `docker compose down -v`

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OpenBoBS • Enterprise OpenClaw Runtime</title>
+    <title>OpenBoBS • OpenClaw Enterprise Console</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -11,14 +11,14 @@
       <aside class="sidebar">
         <div>
           <h1>OpenBoBS</h1>
-          <p class="subtitle">Enterprise OpenClaw orchestration console.</p>
+          <p class="subtitle">OpenClaw-style enterprise orchestration.</p>
         </div>
 
         <section class="hero-card">
-          <img src="assets/agent-hub.svg" alt="Agent network illustration" />
+          <img src="assets/hero-grid.svg" alt="OpenBoBS platform overview" />
           <div>
-            <h3>Deterministic Runtime</h3>
-            <p>Single backend, offline Ollama, predictable agent execution, and production-style UX.</p>
+            <h3>Mission Control</h3>
+            <p>Deterministic multi-agent planning, delivery, quality, and release operations in one dashboard.</p>
           </div>
         </section>
 
@@ -28,10 +28,7 @@
             <input id="ollamaMode" type="checkbox" checked />
             <span>Enable offline Ollama</span>
           </label>
-          <label>
-            Ollama model
-            <input id="ollamaModel" value="llama3.1:8b" />
-          </label>
+          <label>Ollama model <input id="ollamaModel" value="llama3.1:8b" /></label>
           <button id="healthBtn">Check runtime health</button>
         </section>
 
@@ -41,19 +38,13 @@
             <input id="autonomyMode" type="checkbox" />
             <span>Autonomy mode</span>
           </label>
-          <label>
-            Cycles
-            <input id="autonomyCycles" type="number" min="1" max="5" value="2" />
-          </label>
-          <p class="hint">Runs multiple deterministic improvement passes per request.</p>
+          <label>Cycles <input id="autonomyCycles" type="number" min="1" max="5" value="2" /></label>
+          <p class="hint">Autonomy runs iterative improvement cycles with deterministic completion criteria.</p>
         </section>
 
         <section>
           <h2>Workspace</h2>
-          <label>
-            Project name
-            <input id="projectName" value="OpenBoBS" />
-          </label>
+          <label>Project name <input id="projectName" value="OpenBoBS" /></label>
           <label>
             Delivery profile
             <select id="profile">
@@ -88,19 +79,32 @@
         <header>
           <div>
             <h2>Operations Dashboard</h2>
-            <p id="status">Ready • first-run safe</p>
+            <p id="status">Ready • deterministic runtime online</p>
           </div>
           <span class="badge" id="activeAgentsBadge">0 agents active</span>
         </header>
 
-        <section class="predone-panel">
-          <h3>Prebuilt deterministic task packs</h3>
-          <div class="task-buttons">
-            <button data-template="mvp">MVP Sprint</button>
-            <button data-template="incident">Incident Response</button>
-            <button data-template="scaling">Scale Readiness</button>
-            <button data-template="security">Security Hardening</button>
-          </div>
+        <section class="playbooks-panel">
+          <h3>Pre-done task playbooks (1-click)</h3>
+          <div id="taskGrid" class="task-grid"></div>
+        </section>
+
+        <section class="visual-strip" aria-label="Capability highlights">
+          <article>
+            <img src="assets/architecture.svg" alt="Architecture capability" />
+            <h4>Architecture</h4>
+            <p>Bounded contexts, contracts, and deterministic interfaces.</p>
+          </article>
+          <article>
+            <img src="assets/testing.svg" alt="Quality capability" />
+            <h4>Quality</h4>
+            <p>Repeatable tests, risk matrix, and regression controls.</p>
+          </article>
+          <article>
+            <img src="assets/release.svg" alt="Release capability" />
+            <h4>Release</h4>
+            <p>Staged rollout, monitoring gates, and rollback strategy.</p>
+          </article>
         </section>
 
         <section class="dashboard-grid">
@@ -121,14 +125,9 @@
         <div id="messages" class="messages" aria-live="polite"></div>
 
         <form id="composer" class="composer">
-          <textarea
-            id="input"
-            placeholder="Enter objective. Commands: /plan /agents /risk /ship /summary /selfupdate"
-            rows="4"
-            required
-          ></textarea>
+          <textarea id="input" rows="4" required placeholder="Enter objective. Commands: /plan /agents /risk /ship /summary /selfupdate /playbooks"></textarea>
           <div class="composer-actions">
-            <small>Single backend architecture with offline Ollama support.</small>
+            <small>OpenClaw-inspired operator workflow with single-backend reliability.</small>
             <button type="submit">Send</button>
           </div>
         </form>

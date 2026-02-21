@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 300" role="img" aria-label="OpenBoBS enterprise hero graphic">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#15274a"/>
+      <stop offset="1" stop-color="#0a1322"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#3a75ff"/>
+      <stop offset="1" stop-color="#78a6ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="820" height="300" rx="20" fill="url(#bg)"/>
+  <g stroke="#2f4f83" stroke-width="2" opacity="0.5">
+    <path d="M30 70h760"/><path d="M30 150h760"/><path d="M30 230h760"/>
+    <path d="M120 20v260"/><path d="M280 20v260"/><path d="M440 20v260"/><path d="M600 20v260"/><path d="M760 20v260"/>
+  </g>
+  <rect x="50" y="40" width="220" height="96" rx="12" fill="#101d36" stroke="#3b5c92"/>
+  <rect x="300" y="40" width="220" height="96" rx="12" fill="#101d36" stroke="#3b5c92"/>
+  <rect x="550" y="40" width="220" height="96" rx="12" fill="#101d36" stroke="#3b5c92"/>
+  <rect x="175" y="182" width="220" height="86" rx="12" fill="#101d36" stroke="#3b5c92"/>
+  <rect x="425" y="182" width="220" height="86" rx="12" fill="#101d36" stroke="#3b5c92"/>
+  <g fill="url(#card)">
+    <circle cx="100" cy="88" r="14"/><circle cx="350" cy="88" r="14"/><circle cx="600" cy="88" r="14"/>
+    <circle cx="225" cy="222" r="14"/><circle cx="475" cy="222" r="14"/>
+  </g>
+  <g fill="#d7e5ff" font-family="Segoe UI, sans-serif" font-size="20" font-weight="700">
+    <text x="122" y="94">PLAN</text>
+    <text x="372" y="94">BUILD</text>
+    <text x="622" y="94">VALIDATE</text>
+    <text x="248" y="228">RELEASE</text>
+    <text x="498" y="228">OPERATE</text>
+  </g>
+</svg>
