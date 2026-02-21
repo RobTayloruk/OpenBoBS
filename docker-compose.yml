@@ -24,6 +24,7 @@ services:
       OLLAMA_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
       OLLAMA_PULL_TIMEOUT: ${OLLAMA_PULL_TIMEOUT:-240}
+      KALI_INSTALL_ON_START: ${KALI_INSTALL_ON_START:-1}
     ports:
       - "4173:4173"
     healthcheck:

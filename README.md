@@ -65,3 +65,7 @@ Agent tooling context: active agents automatically receive Kali catalog/safe-too
 
 
 Kali runtime note: the Docker image now installs the dashboard-required Kali/security tooling bundle (`nmap`, `nikto`, `sqlmap`, `gobuster`, `hydra`, `ffuf`, `amass`, `whatweb`, `tcpdump`, `dnsutils`, `smbclient`, `snmp`, `masscan`, `netcat-openbsd`, `seclists`).
+
+
+Launch behavior: startup now attempts a best-effort Kali bootstrap at container start and **skips on errors** so the dashboard still comes online.
+If Docker is unavailable on Windows startup, `Start-OpenBoBS.ps1` opens a WSL troubleshooting terminal automatically when available.
