@@ -33,3 +33,13 @@ ollama pull llama3.1:8b
 ```
 
 If Ollama is not available, OpenBoBS automatically falls back to local simulation responses.
+
+## Windows/local bootstrap script
+
+You can generate the full project scaffold locally with:
+
+```powershell
+./Create-OpenBoBS.ps1 -Destination .\OpenBoBS -Force
+```
+
+This script writes all app files (`index.html`, `app.js`, `styles.css`, `run.py`, `run.sh`, and SVG assets) into the target directory.
