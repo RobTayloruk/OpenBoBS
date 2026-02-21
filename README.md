@@ -1,24 +1,44 @@
 # OpenBoBS
 
-OpenBoBS is a ClawDBot-inspired assistant interface with a cleaner UI and additional workflow features.
+OpenBoBS is a deterministic, enterprise-grade OpenClaw-style orchestration console for local-first AI operations.
 
-## Features
+## What changed in this build
 
-- Modern split-pane chat interface (desktop + mobile responsive)
-- Quick actions for common coding tasks
-- Slash commands (`/summary`, `/plan`, `/ship`)
-- Model behavior profiles (Balanced / Creative / Strict)
-- Conversation export to JSON
-- Theme toggle (dark/light)
+- Removed Kali-specific references from the product flow for now.
+- Added **Agent Import Hub** for importing agent definitions from external URLs (for example `https://agents.sabrina.dev/...`).
+- Added **Agent Library** panel with local download links for imported agents.
+- Added local save folder: `agent_library/` (served by backend and persisted in project workspace).
+- Kept advanced bot packs, pre-done playbooks, history replay, and runtime metrics.
 
-## Run locally
+## Agent library APIs
 
-```bash
-python3 -m http.server 4173
+- `POST /api/agents/import` with `{ "url": "https://agents.sabrina.dev/..." }`
+- `GET /api/agents/library`
+- Download imported files directly from `/agent_library/<file>.json`
+
+## Quick start (Windows)
+
+```powershell
+./Start-OpenBoBS.ps1 -Model llama3.1:8b -Rebuild
 ```
 
-Then open: `http://localhost:4173`
+This script:
+1. verifies Docker Desktop,
+2. writes `.env` model settings,
+3. starts compose services,
+4. waits for `/api/runtime` health,
+5. creates desktop shortcut (`OpenBoBS.url`),
+6. opens dashboard at `http://localhost:4173`.
 
-## Notes
+## Deterministic validation
 
-This project currently runs in local demo mode with client-side response simulation.
+```bash
+./update-openbobs.sh
+```
+
+## Operations
+
+- Dashboard: `http://localhost:4173`
+- Agent library folder: `./agent_library`
+- Logs: `docker compose logs -f --tail=200`
+- Stop: `docker compose down`

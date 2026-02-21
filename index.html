@@ -3,33 +3,43 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OpenBoBS Console</title>
+    <title>OpenBoBS • Enterprise Agent Operations Hub</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="app-shell">
       <aside class="sidebar">
-        <h1>OpenBoBS</h1>
-        <p class="subtitle">A ClawDBot-style assistant with upgraded UX.</p>
+        <div class="brand-block">
+          <h1>OpenBoBS</h1>
+          <p class="subtitle">Enterprise AI agent orchestration center.</p>
+        </div>
 
-        <section>
-          <h2>Quick Actions</h2>
-          <div class="button-grid">
-            <button data-action="prompt">Generate a project brief</button>
-            <button data-action="refactor">Refactor this function</button>
-            <button data-action="bug">Find likely bugs</button>
-            <button data-action="tests">Write unit tests</button>
+        <section class="hero-card">
+          <img src="assets/hero-grid.svg" alt="OpenBoBS platform overview" />
+          <div>
+            <h3>Agent Mission Control</h3>
+            <p>Centralized planning, imported agent library, autonomous execution loops, and production-grade monitoring.</p>
           </div>
         </section>
 
         <section>
-          <h2>Workspace</h2>
+          <h2>Runtime Control Panel</h2>
+          <label class="switch-row"><input id="ollamaMode" type="checkbox" checked /><span>Enable offline Ollama</span></label>
+          <label>Ollama model <input id="ollamaModel" value="llama3.1:8b" /></label>
+          <button id="healthBtn">Check runtime health</button>
+        </section>
+
+        <section>
+          <h2>Autonomy Controller</h2>
+          <label class="switch-row"><input id="autonomyMode" type="checkbox" /><span>Autonomy mode</span></label>
+          <label>Cycles <input id="autonomyCycles" type="number" min="1" max="5" value="2" /></label>
+        </section>
+
+        <section>
+          <h2>Workspace Settings</h2>
+          <label>Project name <input id="projectName" value="OpenBoBS" /></label>
           <label>
-            Project name
-            <input id="projectName" value="OpenBoBS" />
-          </label>
-          <label>
-            Model profile
+            Delivery profile
             <select id="profile">
               <option value="balanced">Balanced</option>
               <option value="creative">Creative</option>
@@ -39,11 +49,50 @@
         </section>
 
         <section>
-          <h2>Utilities</h2>
+          <h2>Bot Creator Studio</h2>
+          <label>Bot name <input id="botName" value="Release Sentinel" /></label>
+          <label>Role <input id="botRole" value="Release risk triage + compliance checks" /></label>
+          <label>Prompt focus <input id="botPrompt" value="Summarize blockers and recommend deterministic next steps" /></label>
+          <button id="createBotBtn">Create bot agent</button>
+        </section>
+
+        <section>
+          <h2>Advanced Bot Packs</h2>
+          <div class="button-grid compact" id="botPackGrid"></div>
+        </section>
+
+        <section>
+          <h2>Agent Import Hub</h2>
+          <label>Source URL <input id="agentImportUrl" value="https://agents.sabrina.dev" /></label>
+          <div class="button-grid compact">
+            <button id="importAgentBtn">Import agent</button>
+            <button id="refreshAgentLibraryBtn">Refresh library</button>
+          </div>
+          <p class="hint">Imports JSON agent definitions into local `agent_library/` for reuse and download.</p>
+        </section>
+
+        <section>
+          <h2>Web Intelligence</h2>
+          <label>Query <input id="webSearchQuery" placeholder="enterprise multi-agent orchestration patterns" /></label>
+          <button id="webSearchBtn">Run web search</button>
+        </section>
+
+        <section>
+          <h2>Agents</h2>
+          <div id="agentList" class="agent-list"></div>
+          <div class="button-grid compact">
+            <button id="allAgentsBtn">Enable all</button>
+            <button id="clearAgentsBtn">Clear</button>
+          </div>
+        </section>
+
+        <section>
+          <h2>Actions</h2>
           <div class="button-grid">
-            <button id="exportBtn">Export Conversation</button>
-            <button id="clearBtn" class="danger">Clear Chat</button>
-            <button id="themeBtn">Toggle Theme</button>
+            <button id="runWorkflowBtn">Run workflow</button>
+            <button id="exportBtn">Export session</button>
+            <button id="clearBtn" class="danger">Clear chat</button>
+            <button id="themeBtn">Toggle theme</button>
           </div>
         </section>
       </aside>
@@ -51,23 +100,78 @@
       <main class="chat-panel">
         <header>
           <div>
-            <h2>ClawDBot Alternative</h2>
-            <p id="status">Ready • Local demo mode</p>
+            <h2>Enterprise Operations Board</h2>
+            <p id="status">Ready • deterministic runtime online</p>
           </div>
-          <span class="badge">Feature-rich UI</span>
+          <span class="badge" id="activeAgentsBadge">0 agents active</span>
         </header>
+
+        <section class="playbooks-panel">
+          <h3>Pre-done task playbooks (1-click)</h3>
+          <div id="taskGrid" class="task-grid"></div>
+        </section>
+
+        <section class="visual-strip" aria-label="Capability highlights">
+          <article>
+            <img src="assets/architecture.svg" alt="Architecture capability" />
+            <h4>Architecture</h4>
+            <p>Bounded contexts, contracts, and deterministic interfaces.</p>
+          </article>
+          <article>
+            <img src="assets/testing.svg" alt="Quality capability" />
+            <h4>Quality</h4>
+            <p>Repeatable tests, risk matrix, and regression controls.</p>
+          </article>
+          <article>
+            <img src="assets/release.svg" alt="Release capability" />
+            <h4>Release</h4>
+            <p>Staged rollout, monitoring gates, and rollback strategy.</p>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article>
+            <h3>Agent Progress</h3>
+            <div id="progressList" class="progress-list"></div>
+          </article>
+          <article>
+            <h3>Execution Timeline</h3>
+            <ol id="timelineList" class="timeline-list"></ol>
+          </article>
+          <article>
+            <h3>Output Terminal</h3>
+            <pre id="terminalOutput" class="terminal"></pre>
+          </article>
+        </section>
+
+        <section class="results-grid">
+          <article>
+            <h3>Web Search Results</h3>
+            <ul id="searchResults" class="results-list"></ul>
+          </article>
+          <article>
+            <h3>Agent Library</h3>
+            <ul id="agentLibraryList" class="results-list"></ul>
+          </article>
+        </section>
+
+        <section class="results-grid">
+          <article>
+            <h3>Workflow History</h3>
+            <ul id="historyList" class="results-list"></ul>
+          </article>
+          <article>
+            <h3>Runtime Metrics</h3>
+            <ul id="metricsList" class="results-list"></ul>
+          </article>
+        </section>
 
         <div id="messages" class="messages" aria-live="polite"></div>
 
         <form id="composer" class="composer">
-          <textarea
-            id="input"
-            placeholder="Ask for code help, architecture ideas, tests, and more…"
-            rows="3"
-            required
-          ></textarea>
+          <textarea id="input" rows="4" required placeholder="Commands: /help /plan /agents /risk /ship /summary /selfupdate /playbooks /metrics /botpacks"></textarea>
           <div class="composer-actions">
-            <small>Tip: Use /summary, /plan, /ship</small>
+            <small>Agent import library + advanced bot packs + autonomous orchestration.</small>
             <button type="submit">Send</button>
           </div>
         </form>
@@ -75,10 +179,7 @@
     </div>
 
     <template id="messageTpl">
-      <article class="message">
-        <div class="meta"></div>
-        <p class="content"></p>
-      </article>
+      <article class="message"><div class="meta"></div><p class="content"></p></article>
     </template>
 
     <script src="app.js"></script>
