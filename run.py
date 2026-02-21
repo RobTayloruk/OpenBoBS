@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 import json
 import os
+import re
+import shutil
+import subprocess
 import urllib.error
+import urllib.parse
 import urllib.request
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -10,6 +14,14 @@ HOST = os.environ.get('HOST', '0.0.0.0')
 PORT = int(os.environ.get('PORT', '4173'))
 OLLAMA_URL = os.environ.get('OLLAMA_URL', 'http://127.0.0.1:11434')
 ROOT = Path(__file__).resolve().parent
+
+KALI_TOOLS = {
+    'nmap': ['nmap', '--version'],
+    'nikto': ['nikto', '-Version'],
+    'sqlmap': ['sqlmap', '--version'],
+    'gobuster': ['gobuster', 'version'],
+    'wpscan': ['wpscan', '--version'],
+}
 
 
 def ollama_chat(messages, model):
@@ -31,6 +43,42 @@ def ollama_health():
         body = json.loads(response.read().decode('utf-8'))
         models = [item.get('name', '') for item in body.get('models', [])]
         return {'ok': True, 'models': models}
+
+
+def web_search(query):
+    url = f'https://duckduckgo.com/html/?q={urllib.parse.quote(query)}'
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    with urllib.request.urlopen(req, timeout=10) as response:
+        html = response.read().decode('utf-8', errors='ignore')
+
+    matches = re.findall(r'<a[^>]*class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)</a>', html)
+    results = []
+    for link, title in matches[:6]:
+        clean_title = re.sub(r'<[^>]+>', '', title).strip()
+        results.append({'title': clean_title, 'url': link})
+    return {'ok': True, 'results': results}
+
+
+def kali_tools_status():
+    return {
+        'ok': True,
+        'tools': [
+            {'name': name, 'installed': bool(shutil.which(name)), 'check': ' '.join(cmd)}
+            for name, cmd in KALI_TOOLS.items()
+        ],
+    }
+
+
+def kali_launch(tool):
+    if tool not in KALI_TOOLS:
+        return {'ok': False, 'error': f'Unsupported tool: {tool}'}
+    if not shutil.which(tool):
+        return {'ok': False, 'error': f'{tool} is not installed in this runtime'}
+
+    cmd = KALI_TOOLS[tool]
+    completed = subprocess.run(cmd, capture_output=True, text=True, timeout=15, check=False)
+    output = (completed.stdout or completed.stderr or '').strip()[:1200]
+    return {'ok': completed.returncode == 0, 'tool': tool, 'command': ' '.join(cmd), 'output': output}
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -57,26 +105,50 @@ class Handler(SimpleHTTPRequestHandler):
             self._json(200, {'ok': True, 'host': HOST, 'port': PORT, 'ollamaUrl': OLLAMA_URL})
             return
 
+        if self.path == '/api/kali/tools':
+            self._json(200, kali_tools_status())
+            return
+
         if self.path == '/':
             self.path = '/index.html'
         return super().do_GET()
 
     def do_POST(self):
-        if self.path != '/api/chat':
-            self._json(404, {'ok': False, 'error': 'Not found'})
+        length = int(self.headers.get('Content-Length', '0'))
+        payload = json.loads(self.rfile.read(length).decode('utf-8') or '{}')
+
+        if self.path == '/api/chat':
+            try:
+                messages = payload.get('messages', [])
+                model = payload.get('model', 'llama3.1:8b')
+                reply = ollama_chat(messages, model)
+                self._json(200, {'ok': True, 'reply': reply})
+            except urllib.error.URLError as err:
+                self._json(200, {'ok': False, 'error': f'Ollama unavailable: {err}'})
+            except Exception as err:  # noqa: BLE001
+                self._json(500, {'ok': False, 'error': str(err)})
             return
 
-        try:
-            length = int(self.headers.get('Content-Length', '0'))
-            payload = json.loads(self.rfile.read(length).decode('utf-8'))
-            messages = payload.get('messages', [])
-            model = payload.get('model', 'llama3.1:8b')
-            reply = ollama_chat(messages, model)
-            self._json(200, {'ok': True, 'reply': reply})
-        except urllib.error.URLError as err:
-            self._json(200, {'ok': False, 'error': f'Ollama unavailable: {err}'})
-        except Exception as err:  # noqa: BLE001
-            self._json(500, {'ok': False, 'error': str(err)})
+        if self.path == '/api/search':
+            query = payload.get('query', '').strip()
+            if not query:
+                self._json(400, {'ok': False, 'error': 'query required'})
+                return
+            try:
+                self._json(200, web_search(query))
+            except Exception as err:  # noqa: BLE001
+                self._json(200, {'ok': False, 'error': str(err), 'results': []})
+            return
+
+        if self.path == '/api/kali/run':
+            tool = payload.get('tool', '').strip().lower()
+            try:
+                self._json(200, kali_launch(tool))
+            except Exception as err:  # noqa: BLE001
+                self._json(200, {'ok': False, 'error': str(err)})
+            return
+
+        self._json(404, {'ok': False, 'error': 'Not found'})
 
 
 if __name__ == '__main__':

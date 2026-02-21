@@ -15,6 +15,9 @@ OpenBoBS is a deterministic, enterprise-grade OpenClaw-style orchestration conso
 - Professional operations dashboard with OpenClaw-inspired information architecture.
 - Multi-agent execution with real-time progress and terminal output.
 - 1-click **pre-done playbooks** for common delivery paths.
+- Bot Creator section for adding custom agents on the fly.
+- Integrated web search section for external research context.
+- Kali tools section for safe pentest tool availability/version launch checks.
 - Autonomy mode for multi-cycle iterative improvement.
 - Self-updating local memory (versioned patterns in browser storage).
 - Offline Ollama integration with graceful fallback to local deterministic outputs.
@@ -31,7 +34,7 @@ This script:
 3. starts compose services,
 4. waits for `/api/runtime` health from the unified backend,
 5. prints diagnostics (`docker compose ps` + logs) if health timeout occurs,
-6. opens dashboard at `http://localhost:4173`.
+6. creates a desktop shortcut (`OpenBoBS.url`) and opens dashboard at `http://localhost:4173`.
 
 ## Deterministic validation
 

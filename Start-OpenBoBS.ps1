@@ -9,6 +9,20 @@ function Test-Command($name) {
   return [bool](Get-Command $name -ErrorAction SilentlyContinue)
 }
 
+function New-OpenBoBSDesktopShortcut {
+  param([string]$Url)
+
+  $desktop = [Environment]::GetFolderPath('Desktop')
+  $shortcutPath = Join-Path $desktop 'OpenBoBS.url'
+  @(
+    '[InternetShortcut]'
+    "URL=$Url"
+    'IconFile=%SystemRoot%\System32\SHELL32.dll'
+    'IconIndex=220'
+  ) | Set-Content -Path $shortcutPath -Encoding ASCII
+  return $shortcutPath
+}
+
 if (-not (Test-Command "docker")) {
   throw "Docker CLI not found. Install Docker Desktop first."
 }
@@ -58,10 +72,14 @@ if (-not $ready) {
   throw "OpenBoBS health wait timed out. Review logs above."
 }
 
+$dashboardUrl = 'http://localhost:4173'
+$shortcutPath = New-OpenBoBSDesktopShortcut -Url $dashboardUrl
+
 Write-Host "[OpenBoBS] Runtime healthy. Opening dashboard..."
-Start-Process "http://localhost:4173"
+Start-Process $dashboardUrl
 
 Write-Host "[OpenBoBS] Done."
-Write-Host "  Dashboard: http://localhost:4173"
+Write-Host "  Dashboard: $dashboardUrl"
+Write-Host "  Desktop shortcut: $shortcutPath"
 Write-Host "  Ollama API: http://localhost:11434"
 Write-Host "  Stop stack: docker compose down"

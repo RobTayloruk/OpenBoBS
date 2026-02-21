@@ -9,47 +9,28 @@ const ollamaModeInput = document.getElementById('ollamaMode');
 const ollamaModelInput = document.getElementById('ollamaModel');
 const autonomyModeInput = document.getElementById('autonomyMode');
 const autonomyCyclesInput = document.getElementById('autonomyCycles');
+const botNameInput = document.getElementById('botName');
+const botRoleInput = document.getElementById('botRole');
+const botPromptInput = document.getElementById('botPrompt');
+const webSearchQueryInput = document.getElementById('webSearchQuery');
+const searchResults = document.getElementById('searchResults');
+const kaliResults = document.getElementById('kaliResults');
+
 const agentList = document.getElementById('agentList');
+const taskGrid = document.getElementById('taskGrid');
 const activeAgentsBadge = document.getElementById('activeAgentsBadge');
 const timelineList = document.getElementById('timelineList');
 const progressList = document.getElementById('progressList');
 const terminalOutput = document.getElementById('terminalOutput');
-const taskGrid = document.getElementById('taskGrid');
 
 const SELF_STATE_KEY = 'openbobs-self-update-state';
 const memory = [];
 
 const workflowTemplates = {
-  mvp: {
-    label: 'MVP Sprint',
-    summary: 'PRD, architecture, UI skeleton, test plan, release gates.',
-    prompt: 'Build an enterprise MVP plan with deterministic architecture, UX milestones, tests, and release criteria.',
-  },
-  incident: {
-    label: 'Incident Response',
-    summary: 'Containment, blast radius, remediation, postmortem controls.',
-    prompt: 'Execute incident response with detection, containment, remediation, and hardening actions.',
-  },
-  scaling: {
-    label: 'Scale Readiness',
-    summary: 'Bottlenecks, observability, rollout safety and load strategy.',
-    prompt: 'Create scale readiness package with throughput plan, observability, and staged rollout controls.',
-  },
-  security: {
-    label: 'Security Hardening',
-    summary: 'Threat model, auth controls, secrets and audit improvements.',
-    prompt: 'Produce security hardening backlog with threat model, auth checks, secrets handling, and audits.',
-  },
-  migration: {
-    label: 'Platform Migration',
-    summary: 'Cutover waves, compatibility, risk controls and rollback.',
-    prompt: 'Create a platform migration playbook with phased rollout, compatibility tests, and rollback design.',
-  },
-  reliability: {
-    label: 'Reliability Upgrade',
-    summary: 'SLO policy, incident loops, resilience and recovery drills.',
-    prompt: 'Build a reliability uplift plan with SLOs, error budgets, chaos checks, and recovery runbooks.',
-  },
+  mvp: { label: 'MVP Sprint', summary: 'PRD, architecture, UI skeleton, test plan, release gates.', prompt: 'Build an enterprise MVP plan with deterministic architecture, UX milestones, tests, and release criteria.' },
+  incident: { label: 'Incident Response', summary: 'Containment, blast radius, remediation, postmortem controls.', prompt: 'Execute incident response with detection, containment, remediation, and hardening actions.' },
+  scaling: { label: 'Scale Readiness', summary: 'Bottlenecks, observability, rollout safety and load strategy.', prompt: 'Create scale readiness package with throughput plan, observability, and staged rollout controls.' },
+  security: { label: 'Security Hardening', summary: 'Threat model, auth controls, secrets and audit improvements.', prompt: 'Produce security hardening backlog with threat model, auth checks, secrets handling, and audits.' },
 };
 
 const agentCatalog = [
@@ -68,18 +49,12 @@ function loadSelfState() {
   } catch (_) {}
   return { version: 1, runs: 0, learnedTopics: {} };
 }
-
 const selfUpdateState = loadSelfState();
 const saveSelfState = () => localStorage.setItem(SELF_STATE_KEY, JSON.stringify(selfUpdateState));
-
 const selectedAgents = () => agentCatalog.filter((agent) => document.getElementById(`agent-${agent.id}`)?.checked);
 
 function profilePolicy() {
-  return {
-    balanced: 'Prioritize practical value while preserving quality gates.',
-    creative: 'Provide stronger UX differentiation with bounded risk.',
-    strict: 'Use deterministic controls and explicit acceptance criteria.',
-  }[profileInput.value];
+  return { balanced: 'Practical quality gates.', creative: 'Ambitious UX within guardrails.', strict: 'Deterministic controls and explicit acceptance criteria.' }[profileInput.value];
 }
 
 function appendMessage(role, content, author = role === 'user' ? 'You' : 'OpenBoBS') {
@@ -99,7 +74,7 @@ function terminalLog(line) {
 
 function updateSelfLearning(text) {
   selfUpdateState.runs += 1;
-  text.toLowerCase().replace(/[^a-z0-9\s-]/g, ' ').split(/\s+/).filter((w) => w.length > 4).slice(0, 14).forEach((topic) => {
+  text.toLowerCase().replace(/[^a-z0-9\s-]/g, ' ').split(/\s+/).filter((word) => word.length > 4).slice(0, 12).forEach((topic) => {
     selfUpdateState.learnedTopics[topic] = (selfUpdateState.learnedTopics[topic] || 0) + 1;
   });
   if (selfUpdateState.runs % 3 === 0) selfUpdateState.version += 1;
@@ -107,17 +82,13 @@ function updateSelfLearning(text) {
 }
 
 function selfSummary() {
-  const topics = Object.entries(selfUpdateState.learnedTopics)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4)
-    .map(([name, count]) => `${name}(${count})`)
-    .join(', ');
+  const topics = Object.entries(selfUpdateState.learnedTopics).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([name, count]) => `${name}(${count})`).join(', ');
   return `v${selfUpdateState.version} • runs:${selfUpdateState.runs} • learned:${topics || 'none yet'}`;
 }
 
 function renderTaskGrid() {
   taskGrid.innerHTML = '';
-  Object.entries(workflowTemplates).forEach(([key, item]) => {
+  Object.values(workflowTemplates).forEach((item) => {
     const card = document.createElement('button');
     card.className = 'task-card';
     card.type = 'button';
@@ -189,18 +160,6 @@ function progressRunner(active) {
   });
 }
 
-function slashResponse(text) {
-  const cmd = text.trim().toLowerCase();
-  if (cmd === '/plan') return 'Plan\n1) Scope\n2) Architecture\n3) Build\n4) QA\n5) Release';
-  if (cmd === '/agents') return ['Agents', ...agentCatalog.map((a) => `- ${a.name}`)].join('\n');
-  if (cmd === '/risk') return 'Risk matrix\n- Scope creep\n- Integration drift\n- Coverage gaps\n- Rollout regressions';
-  if (cmd === '/ship') return 'Ship checklist\n- Freeze scope\n- Green checks\n- Validate monitoring\n- Staged rollout';
-  if (cmd === '/summary') return `Summary\nProject: ${projectNameInput.value}\nProfile: ${profileInput.value}\n${selfSummary()}`;
-  if (cmd === '/selfupdate') return `Self updater\n${selfSummary()}`;
-  if (cmd === '/playbooks') return ['Playbooks', ...Object.values(workflowTemplates).map((p) => `- ${p.label}: ${p.summary}`)].join('\n');
-  return null;
-}
-
 async function askOllama(task, active, cycle, totalCycles) {
   const prompt = [
     `Project: ${projectNameInput.value}`,
@@ -244,33 +203,70 @@ async function checkHealth() {
   try {
     const response = await fetch('/api/health');
     const payload = await response.json();
-    if (payload.ok) {
-      appendMessage('assistant', `Ollama healthy. Models: ${payload.models.join(', ') || 'none found'}`, 'Runtime');
-      status.textContent = 'Runtime healthy';
-      terminalLog('Ollama health check OK.');
-    } else {
-      appendMessage('assistant', `Ollama unavailable: ${payload.error}`, 'Runtime');
-      status.textContent = 'Runtime fallback mode';
-      terminalLog(`Ollama unavailable: ${payload.error}`);
-    }
+    appendMessage('assistant', payload.ok ? `Ollama healthy. Models: ${payload.models.join(', ') || 'none found'}` : `Ollama unavailable: ${payload.error}`, 'Runtime');
+    status.textContent = payload.ok ? 'Runtime healthy' : 'Runtime fallback mode';
   } catch (error) {
     appendMessage('assistant', `Health check failed: ${error.message}`, 'Runtime');
-    status.textContent = 'Runtime check failed';
-    terminalLog(`Health check failed: ${error.message}`);
   }
+}
+
+async function runWebSearch() {
+  const query = webSearchQueryInput.value.trim();
+  if (!query) return;
+  terminalLog(`Running web search for: ${query}`);
+  const response = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query }) });
+  const payload = await response.json();
+  searchResults.innerHTML = '';
+  if (!payload.ok || !payload.results?.length) {
+    const item = document.createElement('li');
+    item.textContent = `Search failed: ${payload.error || 'no results'}`;
+    searchResults.append(item);
+    return;
+  }
+  payload.results.forEach((result) => {
+    const item = document.createElement('li');
+    item.innerHTML = `<a href="${result.url}" target="_blank" rel="noopener noreferrer">${result.title}</a>`;
+    searchResults.append(item);
+  });
+}
+
+async function scanKaliTools() {
+  terminalLog('Scanning Kali tool availability.');
+  const response = await fetch('/api/kali/tools');
+  const payload = await response.json();
+  kaliResults.innerHTML = '';
+  payload.tools.forEach((tool) => {
+    const li = document.createElement('li');
+    li.textContent = `${tool.name}: ${tool.installed ? 'installed' : 'not installed'} (${tool.check})`;
+    kaliResults.append(li);
+  });
+}
+
+async function runKaliTool(tool) {
+  terminalLog(`Launching Kali tool check: ${tool}`);
+  const response = await fetch('/api/kali/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tool }) });
+  const payload = await response.json();
+  appendMessage('assistant', payload.ok ? `${tool} launched:\n${payload.output}` : `${tool} failed: ${payload.error}`, 'Kali Runner');
+}
+
+function createBotAgent() {
+  const id = `custom-${Date.now()}`;
+  const name = botNameInput.value.trim();
+  const role = botRoleInput.value.trim();
+  const prompt = botPromptInput.value.trim();
+  if (!name || !role || !prompt) return;
+
+  agentCatalog.push({ id, name, defaultOn: true, prompt: `${role}. ${prompt}` });
+  renderAgents();
+  document.getElementById(`agent-${id}`).checked = true;
+  updateActiveAgentBadge();
+  appendMessage('assistant', `New bot agent created: ${name}\nRole: ${role}\nPrompt: ${prompt}`, 'Bot Creator');
 }
 
 async function runWorkflow(text) {
   const active = selectedAgents();
   if (!active.length) {
     appendMessage('assistant', 'No agents enabled. Select at least one agent to continue.', 'Orchestrator');
-    return;
-  }
-
-  const slash = slashResponse(text);
-  if (slash) {
-    appendMessage('assistant', slash, 'Command Center');
-    terminalLog('Command center executed.');
     return;
   }
 
@@ -285,15 +281,8 @@ async function runWorkflow(text) {
   let finalOutput = '';
 
   for (let cycle = 1; cycle <= totalCycles; cycle += 1) {
-    terminalLog(`Cycle ${cycle}/${totalCycles} started.`);
     try {
-      if (ollamaModeInput.checked) {
-        finalOutput = await askOllama(text, active, cycle, totalCycles);
-        terminalLog(`Cycle ${cycle}/${totalCycles} completed via Ollama.`);
-      } else {
-        finalOutput = localFallback(text, active, cycle, totalCycles);
-        terminalLog(`Cycle ${cycle}/${totalCycles} completed via local mode.`);
-      }
+      finalOutput = ollamaModeInput.checked ? await askOllama(text, active, cycle, totalCycles) : localFallback(text, active, cycle, totalCycles);
     } catch (error) {
       terminalLog(`Cycle ${cycle}/${totalCycles} Ollama error: ${error.message}`);
       finalOutput = localFallback(text, active, cycle, totalCycles);
@@ -321,24 +310,34 @@ document.getElementById('runWorkflowBtn').addEventListener('click', async () => 
 });
 
 document.getElementById('healthBtn').addEventListener('click', checkHealth);
+document.getElementById('webSearchBtn').addEventListener('click', runWebSearch);
+document.getElementById('scanKaliBtn').addEventListener('click', scanKaliTools);
+document.querySelectorAll('.kali-run-btn').forEach((btn) => btn.addEventListener('click', () => runKaliTool(btn.dataset.kaliTool)));
+document.getElementById('createBotBtn').addEventListener('click', createBotAgent);
+
 document.getElementById('allAgentsBtn').addEventListener('click', () => {
   agentCatalog.forEach((agent) => {
-    document.getElementById(`agent-${agent.id}`).checked = true;
+    const cb = document.getElementById(`agent-${agent.id}`);
+    if (cb) cb.checked = true;
   });
   updateActiveAgentBadge();
 });
+
 document.getElementById('clearAgentsBtn').addEventListener('click', () => {
   agentCatalog.forEach((agent) => {
-    document.getElementById(`agent-${agent.id}`).checked = false;
+    const cb = document.getElementById(`agent-${agent.id}`);
+    if (cb) cb.checked = false;
   });
   updateActiveAgentBadge();
 });
+
 document.getElementById('clearBtn').addEventListener('click', () => {
   messages.innerHTML = '';
   terminalOutput.textContent = '';
   memory.length = 0;
   appendMessage('assistant', 'Session cleared.');
 });
+
 document.getElementById('themeBtn').addEventListener('click', () => document.documentElement.classList.toggle('light'));
 
 document.getElementById('exportBtn').addEventListener('click', () => {
@@ -367,4 +366,5 @@ renderTaskGrid();
 renderAgents();
 refreshTimeline();
 terminalLog('Dashboard online. Deterministic runtime active.');
-appendMessage('assistant', 'OpenBoBS is ready. Use a 1-click playbook or enter a custom objective.');
+appendMessage('assistant', 'OpenBoBS is ready. Use a playbook, bot creator, web search, or Kali tool checks.');
+scanKaliTools();

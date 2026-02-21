@@ -18,29 +18,23 @@
           <img src="assets/hero-grid.svg" alt="OpenBoBS platform overview" />
           <div>
             <h3>Mission Control</h3>
-            <p>Deterministic multi-agent planning, delivery, quality, and release operations in one dashboard.</p>
+            <p>Deterministic multi-agent planning, web intelligence, and secure operations workflows.</p>
           </div>
         </section>
 
         <section>
           <h2>Runtime</h2>
-          <label class="switch-row">
-            <input id="ollamaMode" type="checkbox" checked />
-            <span>Enable offline Ollama</span>
-          </label>
+          <label class="switch-row"><input id="ollamaMode" type="checkbox" checked /><span>Enable offline Ollama</span></label>
           <label>Ollama model <input id="ollamaModel" value="llama3.1:8b" /></label>
           <button id="healthBtn">Check runtime health</button>
         </section>
 
         <section>
           <h2>Autonomy</h2>
-          <label class="switch-row">
-            <input id="autonomyMode" type="checkbox" />
-            <span>Autonomy mode</span>
-          </label>
+          <label class="switch-row"><input id="autonomyMode" type="checkbox" /><span>Autonomy mode</span></label>
           <label>Cycles <input id="autonomyCycles" type="number" min="1" max="5" value="2" /></label>
-          <p class="hint">Autonomy runs iterative improvement cycles with deterministic completion criteria.</p>
         </section>
+
 
         <section>
           <h2>Workspace</h2>
@@ -53,6 +47,31 @@
               <option value="strict">Strict</option>
             </select>
           </label>
+        </section>
+
+        <section>
+          <h2>Bot Creator</h2>
+          <label>Bot name <input id="botName" value="Release Sentinel" /></label>
+          <label>Role <input id="botRole" value="Release risk triage + compliance checks" /></label>
+          <label>Prompt focus <input id="botPrompt" value="Summarize blockers and recommend deterministic next steps" /></label>
+          <button id="createBotBtn">Create bot agent</button>
+        </section>
+
+        <section>
+          <h2>Web Search</h2>
+          <label>Query <input id="webSearchQuery" placeholder="OpenClaw agent orchestration patterns" /></label>
+          <button id="webSearchBtn">Run web search</button>
+        </section>
+
+        <section>
+          <h2>Kali Linux Tools</h2>
+          <div class="button-grid compact">
+            <button id="scanKaliBtn">Scan tools</button>
+            <button data-kali-tool="nmap" class="kali-run-btn">Run nmap check</button>
+            <button data-kali-tool="nikto" class="kali-run-btn">Run nikto check</button>
+            <button data-kali-tool="sqlmap" class="kali-run-btn">Run sqlmap check</button>
+          </div>
+          <p class="hint">Tool launch runs safe version/info checks in the active runtime.</p>
         </section>
 
         <section>
@@ -122,12 +141,23 @@
           </article>
         </section>
 
+        <section class="results-grid">
+          <article>
+            <h3>Web Search Results</h3>
+            <ul id="searchResults" class="results-list"></ul>
+          </article>
+          <article>
+            <h3>Kali Tool Status</h3>
+            <ul id="kaliResults" class="results-list"></ul>
+          </article>
+        </section>
+
         <div id="messages" class="messages" aria-live="polite"></div>
 
         <form id="composer" class="composer">
           <textarea id="input" rows="4" required placeholder="Enter objective. Commands: /plan /agents /risk /ship /summary /selfupdate /playbooks"></textarea>
           <div class="composer-actions">
-            <small>OpenClaw-inspired operator workflow with single-backend reliability.</small>
+            <small>Includes bot creation, web search, and Kali tools check workflows.</small>
             <button type="submit">Send</button>
           </div>
         </form>
@@ -135,10 +165,7 @@
     </div>
 
     <template id="messageTpl">
-      <article class="message">
-        <div class="meta"></div>
-        <p class="content"></p>
-      </article>
+      <article class="message"><div class="meta"></div><p class="content"></p></article>
     </template>
 
     <script src="app.js"></script>
