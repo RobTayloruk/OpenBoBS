@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: openbobs-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  openbobs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: openbobs-app
+    restart: unless-stopped
+    depends_on:
+      - ollama
+    environment:
+      HOST: 0.0.0.0
+      PORT: 4173
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
+      OLLAMA_PULL_TIMEOUT: ${OLLAMA_PULL_TIMEOUT:-240}
+    ports:
+      - "4173:4173"
+
+volumes:
+  ollama_data:

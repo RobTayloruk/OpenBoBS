@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OpenBoBS • OpenClaw Runtime Dashboard</title>
+    <title>OpenBoBS • Enterprise OpenClaw Runtime</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -11,14 +11,14 @@
       <aside class="sidebar">
         <div>
           <h1>OpenBoBS</h1>
-          <p class="subtitle">OpenClaw integrated command dashboard.</p>
+          <p class="subtitle">Enterprise OpenClaw orchestration console.</p>
         </div>
 
         <section class="hero-card">
           <img src="assets/agent-hub.svg" alt="Agent network illustration" />
           <div>
-            <h3>Mission Control</h3>
-            <p>Run advanced agents with live progress, terminal output, and offline Ollama responses.</p>
+            <h3>Deterministic Runtime</h3>
+            <p>Single backend, offline Ollama, predictable agent execution, and production-style UX.</p>
           </div>
         </section>
 
@@ -26,14 +26,26 @@
           <h2>Runtime</h2>
           <label class="switch-row">
             <input id="ollamaMode" type="checkbox" checked />
-            <span>Use offline Ollama</span>
+            <span>Enable offline Ollama</span>
           </label>
           <label>
             Ollama model
             <input id="ollamaModel" value="llama3.1:8b" />
           </label>
-          <button id="healthBtn">Check health</button>
-          <p class="hint">Server endpoint: <code>/api/chat</code></p>
+          <button id="healthBtn">Check runtime health</button>
+        </section>
+
+        <section>
+          <h2>Autonomy</h2>
+          <label class="switch-row">
+            <input id="autonomyMode" type="checkbox" />
+            <span>Autonomy mode</span>
+          </label>
+          <label>
+            Cycles
+            <input id="autonomyCycles" type="number" min="1" max="5" value="2" />
+          </label>
+          <p class="hint">Runs multiple deterministic improvement passes per request.</p>
         </section>
 
         <section>
@@ -53,7 +65,7 @@
         </section>
 
         <section>
-          <h2>Advanced Agents</h2>
+          <h2>Agents</h2>
           <div id="agentList" class="agent-list"></div>
           <div class="button-grid compact">
             <button id="allAgentsBtn">Enable all</button>
@@ -65,7 +77,7 @@
           <h2>Actions</h2>
           <div class="button-grid">
             <button id="runWorkflowBtn">Run workflow</button>
-            <button id="exportBtn">Export log</button>
+            <button id="exportBtn">Export session</button>
             <button id="clearBtn" class="danger">Clear chat</button>
             <button id="themeBtn">Toggle theme</button>
           </div>
@@ -75,25 +87,25 @@
       <main class="chat-panel">
         <header>
           <div>
-            <h2>OpenClaw Operations Center</h2>
-            <p id="status">Ready • waiting for request</p>
+            <h2>Operations Dashboard</h2>
+            <p id="status">Ready • first-run safe</p>
           </div>
           <span class="badge" id="activeAgentsBadge">0 agents active</span>
         </header>
 
         <section class="predone-panel">
-          <h3>Pre-done task packs</h3>
+          <h3>Prebuilt deterministic task packs</h3>
           <div class="task-buttons">
             <button data-template="mvp">MVP Sprint</button>
             <button data-template="incident">Incident Response</button>
-            <button data-template="scaling">Scaling Review</button>
+            <button data-template="scaling">Scale Readiness</button>
             <button data-template="security">Security Hardening</button>
           </div>
         </section>
 
         <section class="dashboard-grid">
           <article>
-            <h3>Agent Progress (real-time)</h3>
+            <h3>Agent Progress</h3>
             <div id="progressList" class="progress-list"></div>
           </article>
           <article>
@@ -101,7 +113,7 @@
             <ol id="timelineList" class="timeline-list"></ol>
           </article>
           <article>
-            <h3>Terminal Output</h3>
+            <h3>Output Terminal</h3>
             <pre id="terminalOutput" class="terminal"></pre>
           </article>
         </section>
@@ -111,12 +123,12 @@
         <form id="composer" class="composer">
           <textarea
             id="input"
-            placeholder="Describe the app task. Commands: /plan /agents /risk /ship /summary /selfupdate"
+            placeholder="Enter objective. Commands: /plan /agents /risk /ship /summary /selfupdate"
             rows="4"
             required
           ></textarea>
           <div class="composer-actions">
-            <small>Tip: use a pre-done pack, then click Run workflow.</small>
+            <small>Single backend architecture with offline Ollama support.</small>
             <button type="submit">Send</button>
           </div>
         </form>
