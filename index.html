@@ -30,11 +30,16 @@
         </section>
 
         <section>
+          <h2>Guardrails</h2>
+          <label class="switch-row"><input id="allowKaliLaunches" type="checkbox" /><span>Allow Kali tool launch commands</span></label>
+          <p class="hint">Disabled by default. Keep off unless you explicitly need local pentest checks.</p>
+        </section>
+
+        <section>
           <h2>Autonomy</h2>
           <label class="switch-row"><input id="autonomyMode" type="checkbox" /><span>Autonomy mode</span></label>
           <label>Cycles <input id="autonomyCycles" type="number" min="1" max="5" value="2" /></label>
         </section>
-
 
         <section>
           <h2>Workspace</h2>
@@ -71,7 +76,7 @@
             <button data-kali-tool="nikto" class="kali-run-btn">Run nikto check</button>
             <button data-kali-tool="sqlmap" class="kali-run-btn">Run sqlmap check</button>
           </div>
-          <p class="hint">Tool launch runs safe version/info checks in the active runtime.</p>
+          <p class="hint">Runs safe version/info checks in the active runtime.</p>
         </section>
 
         <section>
@@ -152,12 +157,23 @@
           </article>
         </section>
 
+        <section class="results-grid">
+          <article>
+            <h3>Workflow History</h3>
+            <ul id="historyList" class="results-list"></ul>
+          </article>
+          <article>
+            <h3>Runtime Metrics</h3>
+            <ul id="metricsList" class="results-list"></ul>
+          </article>
+        </section>
+
         <div id="messages" class="messages" aria-live="polite"></div>
 
         <form id="composer" class="composer">
-          <textarea id="input" rows="4" required placeholder="Enter objective. Commands: /plan /agents /risk /ship /summary /selfupdate /playbooks"></textarea>
+          <textarea id="input" rows="4" required placeholder="Enter objective. Commands: /plan /agents /risk /ship /summary /selfupdate /playbooks /help /metrics"></textarea>
           <div class="composer-actions">
-            <small>Includes bot creation, web search, and Kali tools check workflows.</small>
+            <small>Includes bot creation, web search, Kali checks, workflow history, and runtime metrics.</small>
             <button type="submit">Send</button>
           </div>
         </form>

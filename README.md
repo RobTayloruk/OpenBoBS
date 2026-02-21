@@ -18,6 +18,9 @@ OpenBoBS is a deterministic, enterprise-grade OpenClaw-style orchestration conso
 - Bot Creator section for adding custom agents on the fly.
 - Integrated web search section for external research context.
 - Kali tools section for safe pentest tool availability/version launch checks.
+- Workflow history with replay buttons for deterministic reruns.
+- Runtime metrics panel (chat/search/kali/health counters + uptime).
+- Guardrail toggle for Kali tool launch commands (safe-by-default).
 - Autonomy mode for multi-cycle iterative improvement.
 - Self-updating local memory (versioned patterns in browser storage).
 - Offline Ollama integration with graceful fallback to local deterministic outputs.
@@ -52,3 +55,6 @@ This script:
 
 
 Health wait behavior: OpenBoBS starts the app server immediately and performs Ollama model pull in background, so first-run health checks no longer block on long model downloads.
+
+
+New command shortcuts: `/help`, `/metrics`.

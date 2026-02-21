@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import subprocess
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -14,6 +15,15 @@ HOST = os.environ.get('HOST', '0.0.0.0')
 PORT = int(os.environ.get('PORT', '4173'))
 OLLAMA_URL = os.environ.get('OLLAMA_URL', 'http://127.0.0.1:11434')
 ROOT = Path(__file__).resolve().parent
+STARTED_AT = time.time()
+
+METRICS = {
+    'chatRequests': 0,
+    'searchRequests': 0,
+    'kaliToolRuns': 0,
+    'healthChecks': 0,
+    'runtimeChecks': 0,
+}
 
 KALI_TOOLS = {
     'nmap': ['nmap', '--version'],
@@ -95,6 +105,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == '/api/health':
+            METRICS['healthChecks'] += 1
             try:
                 self._json(200, ollama_health())
             except Exception as err:  # noqa: BLE001
@@ -102,7 +113,12 @@ class Handler(SimpleHTTPRequestHandler):
             return
 
         if self.path == '/api/runtime':
+            METRICS['runtimeChecks'] += 1
             self._json(200, {'ok': True, 'host': HOST, 'port': PORT, 'ollamaUrl': OLLAMA_URL})
+            return
+
+        if self.path == '/api/runtime/metrics':
+            self._json(200, {'ok': True, 'metrics': METRICS, 'uptimeSeconds': int(time.time() - STARTED_AT)})
             return
 
         if self.path == '/api/kali/tools':
@@ -118,6 +134,7 @@ class Handler(SimpleHTTPRequestHandler):
         payload = json.loads(self.rfile.read(length).decode('utf-8') or '{}')
 
         if self.path == '/api/chat':
+            METRICS['chatRequests'] += 1
             try:
                 messages = payload.get('messages', [])
                 model = payload.get('model', 'llama3.1:8b')
@@ -130,6 +147,7 @@ class Handler(SimpleHTTPRequestHandler):
             return
 
         if self.path == '/api/search':
+            METRICS['searchRequests'] += 1
             query = payload.get('query', '').strip()
             if not query:
                 self._json(400, {'ok': False, 'error': 'query required'})
@@ -141,6 +159,7 @@ class Handler(SimpleHTTPRequestHandler):
             return
 
         if self.path == '/api/kali/run':
+            METRICS['kaliToolRuns'] += 1
             tool = payload.get('tool', '').strip().lower()
             try:
                 self._json(200, kali_launch(tool))
